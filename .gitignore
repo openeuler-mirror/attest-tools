@@ -25,3 +25,8 @@ ltmain.sh
 *.lo
 *.la
 *.dirstamp
+src/*
+!src/*.c
+!src/*.h
+.vscode/*
+test-driver
