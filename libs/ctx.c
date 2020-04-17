@@ -483,7 +483,7 @@ int attest_ctx_data_init(attest_ctx_data **ctx)
 	int rc = 0, i;
 
 	if (ctx) {
-		new_ctx = malloc(sizeof(*new_ctx));
+		new_ctx = calloc(1, sizeof(*new_ctx));
 		if (!new_ctx)
 			return -ENOMEM;
 	}
@@ -858,7 +858,7 @@ int attest_ctx_verifier_init(attest_ctx_verifier **ctx)
 	attest_ctx_verifier *new_ctx = &global_ctx_verifier;
 
 	if (ctx) {
-		new_ctx = malloc(sizeof(*new_ctx));
+		new_ctx = calloc(1, sizeof(*new_ctx));
 		if (!new_ctx)
 			return -ENOMEM;
 	}
