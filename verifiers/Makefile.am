@@ -47,5 +47,7 @@ libverifier_evm_key_la_SOURCES=evm_key.c
 libverifier_evm_key_la_CFLAGS=${DEPS_CFLAGS} -g -Werror -I$(top_srcdir)/include
 
 libverifier_dummy_la_LDFLAGS=-no-undefined -avoid-version
+libverifier_dummy_la_LIBADD=${DEPS_LIBS} \
+				$(top_srcdir)/libs/libattest.la
 libverifier_dummy_la_SOURCES=dummy.c
 libverifier_dummy_la_CFLAGS=${DEPS_CFLAGS} -g -Werror -I$(top_srcdir)/include
