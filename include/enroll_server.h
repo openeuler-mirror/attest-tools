@@ -32,9 +32,9 @@ int attest_enroll_hmac(attest_ctx_verifier *v_ctx, int akpub_len, BYTE *akpub,
 int attest_enroll_make_credential(attest_ctx_data *d_ctx_in,
 				  attest_ctx_data *d_ctx_out,
 				  attest_ctx_verifier *v_ctx);
-int attest_enroll_make_cert(attest_ctx_data *d_ctx_in,
-			    attest_ctx_data *d_ctx_out,
-			    attest_ctx_verifier *v_ctx, char *pcaKeyPath,
+int attest_enroll_make_cert(attest_ctx_data *d_ctx_in, attest_ctx_data *d_ctx_out,
+			    attest_ctx_verifier *v_ctx, char *cert_subject_entries[],
+			    size_t num_subject_entries, char *pcaKeyPath,
 			    char *pcaKeyPassword, char *pcaCertPath);
 int attest_enroll_process_csr(attest_ctx_data *d_ctx_in,
 			      attest_ctx_verifier *v_ctx, char *reqPath,
@@ -46,8 +46,10 @@ int attest_enroll_msg_make_credential(uint8_t *hmac_key, int hmac_key_len,
 				     char **message_out);
 int attest_enroll_msg_make_cert(uint8_t *hmac_key, int hmac_key_len,
 				char *pcaKeyPath, char *pcaKeyPassword,
-				char *pcaCertPath, char *message_in,
-				char **message_out);
+				char *pcaCertPath, char *cert_subject_entries[],
+				size_t num_subject_entries,
+				char *message_in, char **message_out);
+
 int attest_enroll_msg_process_csr(int pcr_mask_len, uint8_t *pcr_mask,
 				  char *reqPath, uint16_t verifier_flags,
 				  char *message_in, char **csr_str);

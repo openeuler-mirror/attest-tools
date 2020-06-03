@@ -559,19 +559,22 @@ static char *name_fields[] = {
 
 /**
  * Add CSR to the data context
- * @param[in] key_path		path of TPM key (openssl_tpm2_engine format)
- * @param[in] d_ctx		data context
- * @param[in] certify_info_len	Length of certify info
- * @param[in] certify_info	Certify info
- * @param[in] signature_len	Signature length
- * @param[in] signature		Signature
+ * @param[in] key_path              Path of TPM key (openssl_tpm2_engine format)
+ * @param[in] csr_subject_entries   Subject to add to csr
+ * @param[in] num_subject_entries   Number of subject entries
+ * @param[in] d_ctx                 Data context
+ * @param[in] certify_info_len      Length of certify info
+ * @param[in] certify_info          Certify info
+ * @param[in] signature_len         Signature length
+ * @param[in] signature             Signature
  *
  * @returns 0 on success, a negative value on error
  */
-int attest_enroll_add_csr(char *key_path, attest_ctx_data *d_ctx,
-			  UINT16 certify_info_len, BYTE *certify_info,
-			  UINT16 signature_len, BYTE *signature)
+int attest_enroll_add_csr(char *key_path, char *csr_subject_entries[],
+			  attest_ctx_data *d_ctx, UINT16 certify_info_len,
+			  BYTE *certify_info, UINT16 signature_len, BYTE *signature)
 {
+
 	X509_REQ *req = NULL;
 	EVP_PKEY *pk = NULL;
 	ENGINE *e = NULL;
@@ -584,24 +587,9 @@ int attest_enroll_add_csr(char *key_path, attest_ctx_data *d_ctx,
 	X509_NAME_ENTRY *nameEntry = NULL;
 	X509_NAME *x509Name = NULL;
 	SUBJECTKEYATTESTATIONEVIDENCE *skae = NULL;
-	char hostname[128];
 	BYTE *req_bin = NULL;
 	int req_bin_len;
 	int rc = 0, i;
-
-	rc = gethostname(hostname, sizeof(hostname));
-	if (rc < 0)
-		return rc;
-
-        char *subjectEntries[] = {
-		"DE",
-		"Bayern",
-		"Muenchen",
-		"Organization",
-		NULL,
-		hostname,
-                NULL
-        };
 
 	ENGINE_load_builtin_engines();
 
@@ -634,7 +622,7 @@ int attest_enroll_add_csr(char *key_path, attest_ctx_data *d_ctx,
 	for (i = 0; name_fields[i]; i++) {
 		nameEntry = X509_NAME_ENTRY_create_by_NID(NULL,
 				OBJ_txt2nid(name_fields[i]), MBSTRING_ASC,
-				(const unsigned char *)subjectEntries[i], -1);
+				(const unsigned char *)csr_subject_entries[i], -1);
 		if (!nameEntry)
 			continue;
 
@@ -1006,18 +994,20 @@ out:
 
 /**
  * Parse an AK challenge response and create an AK certificate request
- * @param[in] message_in	message containing challenge from RA server
- * @param[in,out] message_out	message with decrypted challenge
+ * @param[in] message_in        Message containing challenge from RA server
+ * @param[in] hostname          Hostname to include in cert request
+ * @param[in,out] message_out   Message with decrypted challenge
  *
  * @returns 0 on success, a negative value on error
  */
-int attest_enroll_msg_ak_cert_request(char *message_in, char **message_out)
+int attest_enroll_msg_ak_cert_request(char *message_in, char* hostname,
+				      char **message_out)
 {
+
 #ifdef DEBUG
 	char *message_in_stripped, *message_out_stripped;
 #endif
 	attest_ctx_data *d_ctx = NULL, *d_ctx_cred;
-	char hostname[128];
 	void *tssContext;
 	int rc;
 
@@ -1039,10 +1029,6 @@ int attest_enroll_msg_ak_cert_request(char *message_in, char **message_out)
 #endif
 	rc = attest_enroll_add_cred(d_ctx, d_ctx_cred, tssContext, "akpriv.bin",
 				    "akpub.bin");
-	if (rc < 0)
-		goto out;
-
-	rc = gethostname(hostname, sizeof(hostname));
 	if (rc < 0)
 		goto out;
 
@@ -1100,19 +1086,20 @@ out:
 
 /**
  * Create a TPM key certificate request
- * @param[in] kernel_bios_log	take or not the current BIOS event log
- * @param[in] kernel_ima_log	take or not the current IMA event log
- * @param[in] pcr_alg_name	PCR algorithm name
- * @param[in] pcr_list_str	String of selected PCRs
- * @param[in] send_unsigned_files	Send unsigned files to verifier
- * @param[in,out] attest_data	data necessary for key verification
- * @param[in,out] message_out	message with certificate request
+ * @param[in] kernel_bios_log       Take or not the current BIOS event log
+ * @param[in] kernel_ima_log        Take or not the current IMA event log
+ * @param[in] pcr_alg_name          PCR algorithm name
+ * @param[in] pcr_list_str          String of selected PCRs
+ * @param[in] send_unsigned_files   Send unsigned files to verifier
+ * @param[in] csr_subject_entries   Subject to add to csr
+ * @param[in,out] attest_data       Data necessary for key verification
+ * @param[in,out] message_out       Message with certificate request
  *
  * @returns 0 on success, a negative value on error
  */
 int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 				       char *pcr_alg_name, char *pcr_list_str,
-				       int send_unsigned_files,
+				       int send_unsigned_files, char *csr_subject_entries[],
 				       char **attest_data, char **message_out)
 {
 	attest_ctx_data *d_ctx = NULL;
@@ -1212,8 +1199,9 @@ int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 			goto out;
 	}
 
-	rc = attest_enroll_add_csr("tpm_key.pem", d_ctx, certify_info_len,
-				   certify_info, signature_len, signature);
+	rc = attest_enroll_add_csr("tpm_key.pem", csr_subject_entries, d_ctx,
+				   certify_info_len, certify_info,
+				   signature_len, signature);
 	if (rc < 0)
 		goto out;
 

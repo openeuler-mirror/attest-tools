@@ -17,7 +17,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/engine.h>
-#include <openssl/engine.h>
 
 #include <ibmtss/Implementation.h>
 

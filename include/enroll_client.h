@@ -32,23 +32,22 @@ int attest_enroll_add_key(attest_ctx_data *d_ctx, TSS_CONTEXT *tssContext,
 int attest_enroll_add_cred(attest_ctx_data *d_ctx, attest_ctx_data *d_ctx_cred,
 			   TSS_CONTEXT *tssContext, char *akPrivPath,
 			   char *akPubPath);
-int attest_enroll_add_csr(char *key_path, attest_ctx_data *d_ctx,
-			  UINT16 certify_info_len, BYTE *certify_info,
-			  UINT16 signature_len, BYTE *signature);
+int attest_enroll_add_csr(char *key_path, char *csr_subject_entries[],
+			  attest_ctx_data *d_ctx, UINT16 certify_info_len,
+			  BYTE *certify_info, UINT16 signature_len, BYTE *signature);
 int attest_enroll_add_quote(attest_ctx_data *d_ctx, TSS_CONTEXT *tssContext,
 			    char *akPrivPath, char *akPubPath, int nonce_len,
 			    uint8_t *nonce, TPML_PCR_SELECTION *pcr_selection);
 int attest_enroll_create_sym_key(int kernel_bios_log, int kernel_ima_log,
 				 char *pcr_alg_name, char *pcr_list_str);
 int attest_enroll_generate_ak(void);
-
-int attest_enroll_msg_ak_challenge_request(char *certListPath,
-					   char **message_out);
-int attest_enroll_msg_ak_cert_request(char *message_in, char **message_out);
+int attest_enroll_msg_ak_challenge_request(char *certListPath, char **message_out);
+int attest_enroll_msg_ak_cert_request(char *message_in, char* hostname,
+				      char **message_out);
 int attest_enroll_msg_ak_cert_response(char *message_in);
 int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 				       char *pcr_alg_name, char *pcr_list_str,
-				       int send_unsigned_files,
+				       int send_unsigned_files, char *csr_subject_entries[],
 				       char **attest_data, char **message_out);
 int attest_enroll_msg_key_cert_response(char *message_in);
 int attest_enroll_msg_quote_nonce_request(char **message_out);

@@ -79,6 +79,15 @@ int main(int argc, char *argv[])
 	int pcr_list[IMPLEMENTATION_PCR];
 	uint16_t verifier_flags = 0;
 	int rc, option_index, c, fd, fd_socket, op, reuse_addr = 1;
+	char *cert_subject_entries[] = {
+		"DE",
+		"Bayern",
+		"Muenchen",
+		"Organization",
+		NULL,
+		NULL,
+		NULL};
+	size_t num_subject_entries = sizeof(cert_subject_entries) / sizeof(char *);
 
 	while (1) {
 		option_index = 0;
@@ -198,10 +207,11 @@ int main(int argc, char *argv[])
 						message_in, &message_out);
 			break;
 		case 1:
-			rc = attest_enroll_msg_make_cert(hmac_key,
-					sizeof(hmac_key), CAKEY_PATH,
-					CAKEY_PASSWORD, CACERT_PATH,
-					message_in, &message_out);
+			rc = attest_enroll_msg_make_cert(hmac_key, sizeof(hmac_key),
+							 CAKEY_PATH, CAKEY_PASSWORD,
+							 CACERT_PATH, cert_subject_entries,
+							 num_subject_entries,
+							 message_in, &message_out);
 			break;
 		case 2:
 			rc = attest_enroll_msg_process_csr(sizeof(pcr_mask),

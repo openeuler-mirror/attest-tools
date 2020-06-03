@@ -136,19 +136,22 @@ static char *name_fields[] = {
 
 /**
  * Make a certificate
- * @param[in] d_ctx_in		input data context
- * @param[in] d_ctx_out		output data context
- * @param[in] v_ctx		verifier context
- * @param[in] pcaKeyPath	Privacy CA private key path
- * @param[in] pcaKeyPassword	Privacy CA private key password
- * @param[in,out] pcaCertPath	Privacy CA certificate
+ * @param[in] d_ctx_in              Input data context
+ * @param[in] d_ctx_out             Output data context
+ * @param[in] v_ctx                 Verifier context
+ * @param[in] cert_subject_entries  Subject to add to certificate
+ * @param[in] num_subject_entries   Number of subject entries
+ * @param[in] pcaKeyPath            Privacy CA private key path
+ * @param[in] pcaKeyPassword        Privacy CA private key password
+ * @param[in,out] pcaCertPath       Privacy CA certificate
  *
  * @returns 0 on success, a negative value on error
  */
-int attest_enroll_make_cert(attest_ctx_data *d_ctx_in,
-			    attest_ctx_data *d_ctx_out,
-			    attest_ctx_verifier *v_ctx, char *pcaKeyPath,
+int attest_enroll_make_cert(attest_ctx_data *d_ctx_in, attest_ctx_data *d_ctx_out,
+			    attest_ctx_verifier *v_ctx, char *cert_subject_entries[],
+			    size_t num_subject_entries, char *pcaKeyPath,
 			    char *pcaKeyPassword, char *pcaCertPath)
+
 {
 	BYTE *attestCertBin = NULL;
 	char *akX509CertString = NULL, *akCertPemString = NULL;
@@ -163,25 +166,14 @@ int attest_enroll_make_cert(attest_ctx_data *d_ctx_in,
 	FILE *fp = NULL;
 	int rc, i;
 
-        char *subjectEntries[] = {
-		"DE",
-		"Bayern",
-		"Muenchen",
-		"Organization",
-		NULL,
-		NULL,
-		NULL
-	};
-
-        char *issuerEntries[] = {
+	char *issuerEntries[] = {
 		NULL,
 		NULL,
 		NULL,
 		NULL,
 		NULL,
 		NULL,
-		NULL
-	};
+		NULL};
 
 	log = attest_ctx_verifier_add_log(v_ctx, "create certificate");
 
@@ -189,7 +181,7 @@ int attest_enroll_make_cert(attest_ctx_data *d_ctx_in,
 	check_goto(!hostname, -ENOENT, out, v_ctx,
 		   "Hostname not provided");
 
-	subjectEntries[5] = (char *)hostname->data;
+	cert_subject_entries[5] = (char *)hostname->data;
 
 	fp = fopen(pcaCertPath, "r");
 	check_goto(!fp, -EACCES, out, v_ctx, "CA cert not found");
@@ -242,8 +234,9 @@ int attest_enroll_make_cert(attest_ctx_data *d_ctx_in,
 			       &pub.publicArea, pcaKeyPath,
 			       sizeof(issuerEntries)/sizeof(char *),
 			       issuerEntries,
-			       sizeof(subjectEntries)/sizeof(char *),
-			       subjectEntries, pcaKeyPassword);
+			       num_subject_entries,
+			       cert_subject_entries, pcaKeyPassword);
+
 	check_goto(rc, -EINVAL, out, v_ctx, "createCertificate() error");
 
 	rc = attest_ctx_data_add(d_ctx_out, CTX_AIK_CERT,
@@ -605,20 +598,24 @@ out:
 
 /**
  * Make a certificate message
- * @param[in] hmac_key		HMAC key to correlate client requests
- * @param[in] hmac_key_len	HMAC key length
- * @param[in] pcaKeyPath	Privacy CA private key path
- * @param[in] pcaKeyPassword	Privacy CA private key password
- * @param[in] pcaCertPath	Privacy CA certificate path
- * @param[in] message_in	Request sent by the client
- * @param[in,out] message_out	Response to be sent to the client
+ * @param[in] hmac_key              HMAC key to correlate client requests
+ * @param[in] hmac_key_len          HMAC key length
+ * @param[in] pcaKeyPath            Privacy CA private key path
+ * @param[in] pcaKeyPassword        Privacy CA private key password
+ * @param[in] pcaCertPath           Privacy CA certificate path
+ * @param[in] cert_subject_entries  Subject to add to certificate
+ * @param[in] num_subject_entries   Number of subject entries
+ * @param[in] message_in            Request sent by the client
+ * @param[in,out] message_out       Response to be sent to the client
  *
  * @returns 0 on success, a negative value on error
  */
 int attest_enroll_msg_make_cert(uint8_t *hmac_key, int hmac_key_len,
 				char *pcaKeyPath, char *pcaKeyPassword,
-				char *pcaCertPath, char *message_in,
-				char **message_out)
+				char *pcaCertPath, char *cert_subject_entries[],
+				size_t num_subject_entries,
+				char *message_in, char **message_out)
+
 {
 	attest_ctx_data *d_ctx_in = NULL, *d_ctx_out = NULL;
 	attest_ctx_verifier *v_ctx = NULL;
@@ -642,8 +639,10 @@ int attest_enroll_msg_make_cert(uint8_t *hmac_key, int hmac_key_len,
 	printf("<- %s\n", message_in_stripped);
 	free(message_in_stripped);
 #endif
-	rc = attest_enroll_make_cert(d_ctx_in, d_ctx_out, v_ctx, pcaKeyPath,
-				     pcaKeyPassword, pcaCertPath);
+	rc = attest_enroll_make_cert(d_ctx_in, d_ctx_out, v_ctx, cert_subject_entries,
+				     num_subject_entries, pcaKeyPath, pcaKeyPassword,
+				     pcaCertPath);
+
 	if (rc < 0)
 		goto out;
 

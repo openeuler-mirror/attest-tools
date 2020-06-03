@@ -162,8 +162,17 @@ int main(int argc, char **argv)
 	char *test_server_fqdn = SERVER_HOSTNAME, *pcr_list_str = NULL;
 	char **attest_data_ptr = NULL, *attest_data, *attest_data_path;
 	char *pcr_alg_name = "sha1";
+	char hostname[128];
 	int skip_sig_ver = 0, send_unsigned_files = 0;
 	int rc = 0, option_index, c, kernel_bios_log = 0, kernel_ima_log = 0;
+	char *csr_subject_entries[] = {
+		"DE",
+		"Bayern",
+		"Muenchen",
+		"Organization",
+		NULL,
+		hostname,
+		NULL};
 
 	while (1) {
 		option_index = 0;
@@ -251,8 +260,11 @@ int main(int argc, char **argv)
 		message_in = message_out;
 		message_out = NULL;
 
-		rc = attest_enroll_msg_ak_cert_request(message_in,
-						       &message_out);
+		rc = gethostname(hostname, sizeof(hostname));
+		if (rc < 0)
+			break;
+
+		rc = attest_enroll_msg_ak_cert_request(message_in, hostname ,&message_out);
 		if (rc < 0)
 			break;
 
@@ -271,11 +283,16 @@ int main(int argc, char **argv)
 		rc = attest_enroll_generate_ak();
 		break;
 	case REQUEST_KEY_CERT:
+		rc = gethostname(hostname, sizeof(hostname));
+		if (rc < 0)
+			break;
+
 		rc = attest_enroll_msg_key_cert_request(kernel_bios_log,
 							kernel_ima_log,
 							pcr_alg_name,
 							pcr_list_str,
 							send_unsigned_files,
+							csr_subject_entries,
 							attest_data_ptr,
 							&message_in);
 		if (rc < 0)
