@@ -515,8 +515,10 @@ int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
 
 	wait(&status);
 
-	if (status)
+	if (status){
+		rc = -EINVAL;
 		goto out;
+	}
 
 	rc = attest_util_read_seq_file(path_cert, &len, (uint8_t **)cert_str);
 out:
