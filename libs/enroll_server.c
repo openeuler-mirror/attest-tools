@@ -177,11 +177,14 @@ int attest_enroll_make_cert(attest_ctx_data *d_ctx_in, attest_ctx_data *d_ctx_ou
 
 	log = attest_ctx_verifier_add_log(v_ctx, "create certificate");
 
-	hostname = attest_ctx_data_get(d_ctx_in, CTX_HOSTNAME);
-	check_goto(!hostname, -ENOENT, out, v_ctx,
-		   "Hostname not provided");
+	// If the CN field of the subject is not passed explicitly
+	if(cert_subject_entries[5] == NULL) {
+		hostname = attest_ctx_data_get(d_ctx_in, CTX_HOSTNAME);
+		check_goto(!hostname, -ENOENT, out, v_ctx,
+			"Hostname not provided");
 
-	cert_subject_entries[5] = (char *)hostname->data;
+		cert_subject_entries[5] = (char *)hostname->data;
+	}
 
 	fp = fopen(pcaCertPath, "r");
 	check_goto(!fp, -EACCES, out, v_ctx, "CA cert not found");
