@@ -24,4 +24,4 @@ libenroll_server_la_LIBADD=${DEPS_LIBS} libskae.la
 libenroll_server_la_SOURCES=enroll_server.c
 libenroll_server_la_CFLAGS=${DEPS_CFLAGS} -I$(top_srcdir)/include
 
-SUBDIRS = event_log
+SUBDIRS = . event_log
