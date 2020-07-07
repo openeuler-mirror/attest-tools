@@ -16,9 +16,9 @@
 #include <string.h>
 #include <errno.h>
 
+#include <digestlist/crypto.h>
 #include "ctx.h"
 #include "event_log/ima.h"
-#include <digest_lists/crypto.h>
 
 #define IMA_SIG_ID "ima_sig|verify"
 #define IMA_CERT_ID "x509_ima.der"
