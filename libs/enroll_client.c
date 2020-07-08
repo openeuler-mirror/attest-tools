@@ -389,44 +389,47 @@ static int collect_data(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
 	size_t len;
 	int rc = 0;
 
-	if (kernel_bios_log && !stat(BIOS_BINARY_MEASUREMENTS, &st)) {
-		rc = attest_util_read_seq_file(BIOS_BINARY_MEASUREMENTS, &len,
-					       &data);
-		if (rc < 0)
-			goto out;
+	if (kernel_bios_log) {
+		if (!stat(BIOS_BINARY_MEASUREMENTS, &st)) {
+			rc = attest_util_read_seq_file(BIOS_BINARY_MEASUREMENTS,
+						       &len, &data);
+			if (rc < 0)
+				goto out;
 
-		rc = attest_ctx_data_add(d_ctx, CTX_EVENT_LOG, len, data,
-					 "bios");
-	} else if (!stat(BIOS_FILENAME, &st)) {
-		rc = attest_ctx_data_add_file(d_ctx, CTX_EVENT_LOG,
-					      BIOS_FILENAME, "bios");
+			rc = attest_ctx_data_add(d_ctx, CTX_EVENT_LOG, len,
+						 data, "bios");
+		} else if (!stat(BIOS_FILENAME, &st)) {
+			rc = attest_ctx_data_add_file(d_ctx, CTX_EVENT_LOG,
+						      BIOS_FILENAME, "bios");
+		}
 	}
 
 	if (rc)
 		goto out;
 
-	if (kernel_ima_log && !stat(IMA_BINARY_MEASUREMENTS, &st)) {
-		rc = attest_util_read_seq_file(IMA_BINARY_MEASUREMENTS, &len,
-					       &data);
+	if (kernel_ima_log) {
+		if (!stat(IMA_BINARY_MEASUREMENTS, &st)) {
+			rc = attest_util_read_seq_file(IMA_BINARY_MEASUREMENTS,
+						       &len, &data);
+			if (rc)
+				goto out;
+
+			rc = attest_ctx_data_add(d_ctx, CTX_EVENT_LOG, len,
+						 data, "ima");
+		} else if (!stat(IMA_FILENAME, &st)) {
+			rc = attest_ctx_data_add_file(d_ctx, CTX_EVENT_LOG,
+						      IMA_FILENAME, "ima");
+		}
+	}
+
+	if (rc)
+		goto out;
+
+	if (send_unsigned_files) {
+		rc = attest_ctx_verifier_req_add(v_ctx, "ima_cp|verify", "");
 		if (rc)
 			goto out;
-
-		rc = attest_ctx_data_add(d_ctx, CTX_EVENT_LOG, len, data,
-					 "ima");
-	} else if (!stat(IMA_FILENAME, &st)) {
-		rc = attest_ctx_data_add_file(d_ctx, CTX_EVENT_LOG,
-					      IMA_FILENAME, "ima");
 	}
-
-	if (rc)
-		goto out;
-
-	if (!send_unsigned_files)
-		goto out;
-
-	rc = attest_ctx_verifier_req_add(v_ctx, "ima_cp|verify", "");
-	if (rc)
-		goto out;
 
 	rc = attest_event_log_parse_verify(d_ctx, v_ctx, 1);
 out:
