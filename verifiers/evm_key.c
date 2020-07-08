@@ -47,7 +47,7 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 	check_goto((req_len > 6 || (req_len % 2)), -EINVAL, out, v_ctx,
 		   "invalid requirement");
 
-	rc = hex2bin(pcr_mask_bin, verifier->req, req_len / 2);
+	rc = _hex2bin(pcr_mask_bin, verifier->req, req_len / 2);
 	check_goto(rc, rc, out, v_ctx, "invalid requirement");
 
 	ima_log = attest_event_log_get(v_ctx, "ima");
@@ -60,7 +60,7 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 	sym_key_bin = malloc(sym_key->len / 2);
 	check_goto(!sym_key_bin, -ENOMEM, out, v_ctx, "out of memory");
 
-	rc = hex2bin(sym_key_bin, (const char *)sym_key->data,
+	rc = _hex2bin(sym_key_bin, (const char *)sym_key->data,
 		     sym_key->len / 2);
 	check_goto(rc, rc, out, v_ctx, "invalid symmetric key");
 

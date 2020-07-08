@@ -442,7 +442,7 @@ static int hex_to_bin(char ch)
 	return -1;
 }
 
-int hex2bin(unsigned char *dst, const char *src, size_t count)
+int _hex2bin(unsigned char *dst, const char *src, size_t count)
 {
 	while (count--) {
 		int hi = hex_to_bin(*src++);
@@ -456,7 +456,7 @@ int hex2bin(unsigned char *dst, const char *src, size_t count)
 	return 0;
 }
 
-char *bin2hex(char *dst, const void *src, size_t count)
+char *_bin2hex(char *dst, const void *src, size_t count)
 {
 	const unsigned char *_src = src;
 

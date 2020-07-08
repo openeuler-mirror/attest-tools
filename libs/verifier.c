@@ -147,8 +147,8 @@ static int attest_verifier_check_policy_digest(attest_ctx_data *d_ctx,
 	list_for_each_entry(policy, head, list) {
 		policy_bin = malloc(policy->len / 2);
 		check_goto(!policy_bin, -ENOMEM, out, v_ctx, "out of memory");
-		rc = hex2bin(policy_bin, (const char *)policy->data,
-			     policy->len / 2);
+		rc = _hex2bin(policy_bin, (const char *)policy->data,
+			      policy->len / 2);
 		check_goto(rc, -ENOMEM, out, v_ctx,
 			   "policy hex -> bin conversion error");
 
@@ -288,8 +288,8 @@ int attest_verifier_check_key_policy(attest_ctx_data *d_ctx,
 		policy_bin_ptr = policy_bin = malloc(policy_bin_len);
 		check_goto(!policy_bin, -ENOMEM, out, v_ctx, "out of memory");
 
-		rc = hex2bin(policy_bin, (const char *)policy->data,
-			     policy_bin_len);
+		rc = _hex2bin(policy_bin, (const char *)policy->data,
+			      policy_bin_len);
 		check_goto(rc, -EINVAL, out_free, v_ctx,
 			   "policy hex -> bin conversion error");
 

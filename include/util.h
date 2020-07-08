@@ -35,7 +35,7 @@ int attest_util_check_mask(int mask_in_len, uint8_t *mask_in,
 int attest_util_parse_pcr_list(const char *pcr_list_str, int pcr_list_num,
 			       int *pcr_list);
 
-int hex2bin(unsigned char *dst, const char *src, size_t count);
-char *bin2hex(char *dst, const void *src, size_t count);
+int _hex2bin(unsigned char *dst, const char *src, size_t count);
+char *_bin2hex(char *dst, const void *src, size_t count);
 
 #endif /*_UTIL_H*/

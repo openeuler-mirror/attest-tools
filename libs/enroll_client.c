@@ -536,7 +536,7 @@ static int build_key_policy(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
 
 	*policy_bin_len = written;
 
-	bin2hex(policy_str, *policy_bin, written);
+	_bin2hex(policy_str, *policy_bin, written);
 
 	rc = attest_ctx_data_add(d_ctx, policy_field, written * 2,
 				 (uint8_t *)policy_str, NULL);
@@ -779,7 +779,7 @@ static int write_trusted_key_blob(char *path, int append)
 		goto out;
 	}
 
-	bin2hex(hex_data, bin_data, bin_data_len);
+	_bin2hex(hex_data, bin_data, bin_data_len);
 
 	rc = attest_util_write_file("trusted_key.blob", bin_data_len * 2,
 				    (uint8_t *)hex_data, append);
