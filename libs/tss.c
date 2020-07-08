@@ -761,6 +761,11 @@ int attest_tss_pcrread(TSS_CONTEXT *tssContext, TPMI_DH_PCR pcr,
 		return -EINVAL;
 	}
 
+	if (!out.pcrValues.count) {
+		printf("PCR bank with alg %d not found\n", halg);
+		return -EINVAL;
+	}
+
 	memcpy(pcr_value, out.pcrValues.digests[0].t.buffer,
 	       out.pcrValues.digests[0].t.size);
 
