@@ -48,7 +48,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%{_libdir}
 %{_libdir}/libenroll_client.so
 %{_libdir}/libverifier_ima_policy.so
 %{_libdir}/libskae.so
@@ -64,7 +63,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libverifier_ima_boot_aggregate.so
 %{_libdir}/libeventlog_bios.so
 %exclude %{_libdir}/*.la
-%{_bindir}
 %{_bindir}/attest_tls_client
 %{_bindir}/attest_build_json
 %{_bindir}/attest_tls_server
