@@ -19,7 +19,8 @@ BuildRequires:  openssl-devel
 %endif
 
 %description
-This package includes the tools for configure the IMA Digest Lists extension.
+This package includes the tools to perform remote attestation with a quote
+or a TPM key.
 
 %prep
 %autosetup -n %{name}-%{version} -p1
