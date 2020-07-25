@@ -7,7 +7,7 @@ Source0:        %{name}-%{version}.tar.gz
 Source1:	openssl_tpm2_engine-2.4.2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 License:        GPL-2.0
-Url:            https://github.com/euleros/digest-list-tools
+Url:            https://gitee.com/openeuler/attest-tools
 BuildRequires:  autoconf automake libcurl-devel libtool
 BuildRequires:  digest-list-tools json-c-devel libcurl-devel tss2-devel
 Requires:       json-c curl tss2
