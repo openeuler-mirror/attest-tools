@@ -29,9 +29,9 @@ void cleanup_openssl();
 SSL_CTX *create_context(int context_type);
 
 int configure_context(SSL_CTX *ctx, int engine, int verify_skae, char *key_path,
-		      char *cert_path, char *ca_path);
+              char *cert_path, char *ca_path);
 int configure_attest(int fd, size_t recv_data_size,
-		     unsigned char *recv_attest_data, char *pcr_list_str,
-		     char *req_path);
+             unsigned char *recv_attest_data, char *pcr_list_str,
+             char *req_path);
 
 #endif /*_ATTEST_TLS_COMMON_H*/

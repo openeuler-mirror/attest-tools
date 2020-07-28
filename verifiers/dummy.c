@@ -23,19 +23,19 @@
 
 int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 {
-	struct verification_log *log;
-	struct event_log *event_log;
-	struct event_log_entry *log_entry;
-	int rc = 0;
+    struct verification_log *log;
+    struct event_log *event_log;
+    struct event_log_entry *log_entry;
+    int rc = 0;
 
-	log = attest_ctx_verifier_add_log(v_ctx, "dummy verification");
+    log = attest_ctx_verifier_add_log(v_ctx, "dummy verification");
 
-	list_for_each_entry(event_log, &v_ctx->event_logs, list)
-		list_for_each_entry(log_entry, &event_log->logs, list)
-			log_entry->flags |= LOG_ENTRY_PROCESSED;
+    list_for_each_entry(event_log, &v_ctx->event_logs, list)
+        list_for_each_entry(log_entry, &event_log->logs, list)
+            log_entry->flags |= LOG_ENTRY_PROCESSED;
 
-	attest_ctx_verifier_end_log(v_ctx, log, rc);
-	return rc;
+    attest_ctx_verifier_end_log(v_ctx, log, rc);
+    return rc;
 }
 
 int num_func = 1;

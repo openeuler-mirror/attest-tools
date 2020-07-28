@@ -27,41 +27,41 @@
 #include "ctx.h"
 
 int attest_enroll_hmac(attest_ctx_verifier *v_ctx, int akpub_len, BYTE *akpub,
-		       int credential_len, BYTE *credential,
-		       unsigned int *hmac_len, BYTE *hmac);
+               int credential_len, BYTE *credential,
+               unsigned int *hmac_len, BYTE *hmac);
 int attest_enroll_make_credential(attest_ctx_data *d_ctx_in,
-				  attest_ctx_data *d_ctx_out,
-				  attest_ctx_verifier *v_ctx);
+                  attest_ctx_data *d_ctx_out,
+                  attest_ctx_verifier *v_ctx);
 int attest_enroll_make_cert(attest_ctx_data *d_ctx_in, attest_ctx_data *d_ctx_out,
-			    attest_ctx_verifier *v_ctx, char *cert_subject_entries[],
-			    size_t num_subject_entries, char *pcaKeyPath,
-			    char *pcaKeyPassword, char *pcaCertPath);
+                attest_ctx_verifier *v_ctx, char *cert_subject_entries[],
+                size_t num_subject_entries, char *pcaKeyPath,
+                char *pcaKeyPassword, char *pcaCertPath);
 int attest_enroll_process_csr(attest_ctx_data *d_ctx_in,
-			      attest_ctx_verifier *v_ctx, char *reqPath,
-			      char **csr_str);
+                  attest_ctx_verifier *v_ctx, char *reqPath,
+                  char **csr_str);
 
 int attest_enroll_msg_make_credential(uint8_t *hmac_key, int hmac_key_len,
-				     char *pcaKeyPath, char *pcaKeyPassword,
-				     char *pcaCertPath, char *message_in,
-				     char **message_out);
+                     char *pcaKeyPath, char *pcaKeyPassword,
+                     char *pcaCertPath, char *message_in,
+                     char **message_out);
 int attest_enroll_msg_make_cert(uint8_t *hmac_key, int hmac_key_len,
-				char *pcaKeyPath, char *pcaKeyPassword,
-				char *pcaCertPath, char *cert_subject_entries[],
-				size_t num_subject_entries,
-				char *message_in, char **message_out);
+                char *pcaKeyPath, char *pcaKeyPassword,
+                char *pcaCertPath, char *cert_subject_entries[],
+                size_t num_subject_entries,
+                char *message_in, char **message_out);
 
 int attest_enroll_msg_process_csr(int pcr_mask_len, uint8_t *pcr_mask,
-				  char *reqPath, uint16_t verifier_flags,
-				  char *message_in, char **csr_str);
+                  char *reqPath, uint16_t verifier_flags,
+                  char *message_in, char **csr_str);
 int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
-			   char *caCertPath, char *csr_str,
-			   char **cert_str);
+               char *caCertPath, char *csr_str,
+               char **cert_str);
 int attest_enroll_msg_return_cert(char *cert_str, char *ca_cert_str,
-				  char **message_out);
+                  char **message_out);
 int attest_enroll_msg_gen_quote_nonce(int hmac_key_len, uint8_t *hmac_key,
-				      char *message_in, char **message_out);
+                      char *message_in, char **message_out);
 int attest_enroll_msg_process_quote(int hmac_key_len, uint8_t *hmac_key,
-				    int pcr_mask_len, uint8_t *pcr_mask,
-				    char *reqPath, uint16_t verifier_flags,
-				    char *message_in, char **message_out);
+                    int pcr_mask_len, uint8_t *pcr_mask,
+                    char *reqPath, uint16_t verifier_flags,
+                    char *message_in, char **message_out);
 #endif /*_ENROLL_SERVER_H*/
