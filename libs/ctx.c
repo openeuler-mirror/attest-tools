@@ -61,38 +61,38 @@ attest_ctx_data global_ctx_data = {0};
 attest_ctx_verifier global_ctx_verifier = {0};
 
 struct verification_log unknown_log = {{&unknown_log.list, &unknown_log.list},
-                    "unknown log", "fail",
-                    "unknown_reason"};
+					"unknown log", "fail",
+					"unknown_reason"};
 
 static const char *ctx_fields_str[CTX__LAST] = {
-    [CTX_PRIVACY_CA_CERT] = "privacy_ca_cert",
-    [CTX_AIK_CERT] = "aik_cert",
-    [CTX_TPM_AK_KEY] = "tpm_ak",
-    [CTX_TPM_KEY_TEMPLATE] = "tpm_key",
-    [CTX_TPM_KEY_POLICY] = "policy",
-    [CTX_SYM_KEY_POLICY] = "sym_policy",
-    [CTX_EVENT_LOG] = "event_log",
-    [CTX_AUX_DATA] = "aux_data",
-    [CTX_EK_CERT] = "ek_cert",
-    [CTX_EK_CA_CERT] = "ek_ca_cert",
-    [CTX_CRED] = "cred",
-    [CTX_CRED_HMAC] = "cred_hmac",
-    [CTX_CREDBLOB] = "credblob",
-    [CTX_SECRET] = "secret",
-    [CTX_CSR] = "csr",
-    [CTX_KEY_CERT] = "key_cert",
-    [CTX_CA_CERT] = "ca_cert",
-    [CTX_HOSTNAME] = "hostname",
-    [CTX_TPM_SYM_KEY] = "tpm_sym_key",
-    [CTX_NONCE] = "nonce",
-    [CTX_NONCE_HMAC] = "nonce_hmac",
-    [CTX_TPMS_ATTEST] = "tpms_attest",
-    [CTX_TPMS_ATTEST_SIG] = "tpms_attest_sig",
+	[CTX_PRIVACY_CA_CERT] = "privacy_ca_cert",
+	[CTX_AIK_CERT] = "aik_cert",
+	[CTX_TPM_AK_KEY] = "tpm_ak",
+	[CTX_TPM_KEY_TEMPLATE] = "tpm_key",
+	[CTX_TPM_KEY_POLICY] = "policy",
+	[CTX_SYM_KEY_POLICY] = "sym_policy",
+	[CTX_EVENT_LOG] = "event_log",
+	[CTX_AUX_DATA] = "aux_data",
+	[CTX_EK_CERT] = "ek_cert",
+	[CTX_EK_CA_CERT] = "ek_ca_cert",
+	[CTX_CRED] = "cred",
+	[CTX_CRED_HMAC] = "cred_hmac",
+	[CTX_CREDBLOB] = "credblob",
+	[CTX_SECRET] = "secret",
+	[CTX_CSR] = "csr",
+	[CTX_KEY_CERT] = "key_cert",
+	[CTX_CA_CERT] = "ca_cert",
+	[CTX_HOSTNAME] = "hostname",
+	[CTX_TPM_SYM_KEY] = "tpm_sym_key",
+	[CTX_NONCE] = "nonce",
+	[CTX_NONCE_HMAC] = "nonce_hmac",
+	[CTX_TPMS_ATTEST] = "tpms_attest",
+	[CTX_TPMS_ATTEST_SIG] = "tpms_attest_sig",
 };
 
 static const char *data_formats_str[DATA_FMT__LAST] = {
-    [DATA_FMT_BASE64] = "base64",
-    [DATA_FMT_URI] = "uri",
+	[DATA_FMT_BASE64] = "base64",
+	[DATA_FMT_URI] = "uri",
 };
 
 /**
@@ -108,7 +108,7 @@ static const char *data_formats_str[DATA_FMT__LAST] = {
  */
 const char *attest_ctx_data_get_field(enum ctx_fields field)
 {
-    return ctx_fields_str[field];
+	return ctx_fields_str[field];
 }
 
 /**
@@ -119,21 +119,21 @@ const char *attest_ctx_data_get_field(enum ctx_fields field)
  */
 const char *attest_ctx_data_get_format(enum data_formats fmt)
 {
-    return data_formats_str[fmt];
+	return data_formats_str[fmt];
 }
 
 static int attest_ctx_data_lookup_common(const char *data, int data_len,
-                     int last, const char *string_array[])
+					 int last, const char *string_array[])
 {
-    int i;
+	int i;
 
-    for (i = 0; i < last; i++) {
-        if ((data_len && !strncmp(data, string_array[i], data_len)) ||
-            (!data_len && !strcmp(data, string_array[i])))
-            return i;
-    }
+	for (i = 0; i < last; i++) {
+		if ((data_len && !strncmp(data, string_array[i], data_len)) ||
+		    (!data_len && !strcmp(data, string_array[i])))
+			return i;
+	}
 
-    return last;
+	return last;
 }
 
 /**
@@ -144,8 +144,8 @@ static int attest_ctx_data_lookup_common(const char *data, int data_len,
  */
 enum ctx_fields attest_ctx_data_lookup_field(const char *field)
 {
-    return attest_ctx_data_lookup_common(field, 0, CTX__LAST,
-                         ctx_fields_str);
+	return attest_ctx_data_lookup_common(field, 0, CTX__LAST,
+					     ctx_fields_str);
 }
 
 /**
@@ -157,86 +157,86 @@ enum ctx_fields attest_ctx_data_lookup_field(const char *field)
  */
 enum data_formats attest_ctx_data_lookup_format(const char *fmt, int fmt_len)
 {
-    return attest_ctx_data_lookup_common(fmt, fmt_len, DATA_FMT__LAST,
-                         data_formats_str);
+	return attest_ctx_data_lookup_common(fmt, fmt_len, DATA_FMT__LAST,
+					     data_formats_str);
 }
 
 static int attest_ctx_data_add_common(attest_ctx_data *ctx,
-                      enum ctx_fields field, char *path,
-                      size_t len, unsigned char *data,
-                      const char *label)
+				      enum ctx_fields field, char *path,
+				      size_t len, unsigned char *data,
+				      const char *label)
 {
-    struct data_item *new_item = NULL;
-    char path_dest[MAX_PATH_LENGTH], *path_ptr = path;
-    char *filename;
-    int rc = -EINVAL;
+	struct data_item *new_item = NULL;
+	char path_dest[MAX_PATH_LENGTH], *path_ptr = path;
+	char *filename;
+	int rc = -EINVAL;
 
-    if (!ctx)
-        return -EINVAL;
+	if (!ctx)
+		return -EINVAL;
 
-    if (path) {
-        filename = strrchr(path, '/');
-        if (filename)
-            filename++;
-        else
-            filename = path;
+	if (path) {
+		filename = strrchr(path, '/');
+		if (filename)
+			filename++;
+		else
+			filename = path;
 
-        if (strncmp(path, ctx->data_dir, strlen(ctx->data_dir))) {
-            snprintf(path_dest, sizeof(path_dest), "%s/%s",
-                 ctx->data_dir, filename);
-            rc = attest_util_copy_file(path, path_dest);
-            if (rc)
-                goto out;
+		if (strncmp(path, ctx->data_dir, strlen(ctx->data_dir))) {
+			snprintf(path_dest, sizeof(path_dest), "%s/%s",
+				 ctx->data_dir, filename);
+			rc = attest_util_copy_file(path, path_dest);
+			if (rc)
+				goto out;
 
-            path_ptr = path_dest;
-        }
+			path_ptr = path_dest;
+		}
 
-        rc = attest_util_read_file(path_ptr, &len, &data);
-        if (rc)
-            goto out;
+		rc = attest_util_read_file(path_ptr, &len, &data);
+		if (rc)
+			goto out;
 
-        path_ptr = strdup(path_ptr);
-        if (!path_ptr) {
-            rc = -ENOMEM;
-            goto out;
-        }
-    }
+		path_ptr = strdup(path_ptr);
+		if (!path_ptr) {
+			rc = -ENOMEM;
+			goto out;
+		}
+	}
 
-    if (!data)
-        goto out;
+	if (!data)
+		goto out;
 
-    new_item = calloc(1, sizeof(*new_item));
-    if (!new_item) {
-        rc = -ENOMEM;
-        goto out;
-    }
+	new_item = calloc(1, sizeof(*new_item));
+	if (!new_item) {
+		rc = -ENOMEM;
+		goto out;
+	}
 
-    new_item->data = data;
-    new_item->len = len;
-    new_item->mapped_file = path_ptr;
+	new_item->data = data;
+	new_item->len = len;
+	new_item->mapped_file = path_ptr;
 
-    if (label) {
-        new_item->label = strdup(label);
-        if (!new_item->label) {
-            rc = -ENOMEM;
-            goto out;
-        }
-    }
+	if (label) {
+		new_item->label = strdup(label);
+		if (!new_item->label) {
+			rc = -ENOMEM;
+			goto out;
+		}
+	}
 
-    list_add_tail(&new_item->list, &ctx->ctx_data[field]);
-    rc = 0;
+	list_add_tail(&new_item->list, &ctx->ctx_data[field]);
+	rc = 0;
 out:
-    if (rc) {
-        if (path)
-            munmap(data, len);
+	if (rc) {
+		if (path)
+			munmap(data, len);
 
-        if (new_item) {
-            free(new_item->label);
-            free(new_item);
-        }
-    }
+		if (new_item) {
+			free(new_item->label);
+			free(new_item);
+		}
+	}
 
-    return rc;
+	return rc;
 }
 
 /**
@@ -250,9 +250,9 @@ out:
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_data_add(attest_ctx_data *ctx, enum ctx_fields field,
-            size_t len, unsigned char *data, const char *label)
+			size_t len, unsigned char *data, const char *label)
 {
-    return attest_ctx_data_add_common(ctx, field, NULL, len, data, label);
+	return attest_ctx_data_add_common(ctx, field, NULL, len, data, label);
 }
 
 /**
@@ -266,18 +266,18 @@ int attest_ctx_data_add(attest_ctx_data *ctx, enum ctx_fields field,
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_data_add_copy(attest_ctx_data *ctx, enum ctx_fields field,
-                 size_t len, unsigned char *data,
-                 const char *label)
+			     size_t len, unsigned char *data,
+			     const char *label)
 {
-    unsigned char *copy;
+	unsigned char *copy;
 
-    copy = malloc(len);
-    if (!copy)
-        return -ENOMEM;
+	copy = malloc(len);
+	if (!copy)
+		return -ENOMEM;
 
-    memcpy(copy, data, len);
+	memcpy(copy, data, len);
 
-    return attest_ctx_data_add_common(ctx, field, NULL, len, copy, label);
+	return attest_ctx_data_add_common(ctx, field, NULL, len, copy, label);
 }
 
 /**
@@ -290,9 +290,9 @@ int attest_ctx_data_add_copy(attest_ctx_data *ctx, enum ctx_fields field,
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_data_add_file(attest_ctx_data *ctx, enum ctx_fields field,
-                 char *path, const char *label)
+			     char *path, const char *label)
 {
-    return attest_ctx_data_add_common(ctx, field, path, 0, NULL, label);
+	return attest_ctx_data_add_common(ctx, field, path, 0, NULL, label);
 }
 
 /**
@@ -305,62 +305,62 @@ int attest_ctx_data_add_file(attest_ctx_data *ctx, enum ctx_fields field,
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_data_add_string(attest_ctx_data *ctx, enum ctx_fields field,
-                   const char *string, const char *label)
+			       const char *string, const char *label)
 {
-    char data_path_template[MAX_PATH_LENGTH], *data_sep;
-    unsigned char *output;
-    enum data_formats fmt;
-    size_t output_len;
-    int rc = 0, fd;
+	char data_path_template[MAX_PATH_LENGTH], *data_sep;
+	unsigned char *output;
+	enum data_formats fmt;
+	size_t output_len;
+	int rc = 0, fd;
 
-    if (!ctx)
-        return -EINVAL;
+	if (!ctx)
+		return -EINVAL;
 
-    data_sep = strchr(string, ':');
-    if (!data_sep)
-        return -EINVAL;
+	data_sep = strchr(string, ':');
+	if (!data_sep)
+		return -EINVAL;
 
-    fmt = attest_ctx_data_lookup_format(string, data_sep - string);
-    if (fmt == DATA_FMT__LAST)
-        return -EINVAL;
+	fmt = attest_ctx_data_lookup_format(string, data_sep - string);
+	if (fmt == DATA_FMT__LAST)
+		return -EINVAL;
 
-    snprintf(data_path_template, sizeof(data_path_template), "%s/%s",
-         ctx->data_dir, (label && field == CTX_AUX_DATA) ?
-         label : TEMP_FILE_TEMPLATE);
+	snprintf(data_path_template, sizeof(data_path_template), "%s/%s",
+		 ctx->data_dir, (label && field == CTX_AUX_DATA) ?
+		 label : TEMP_FILE_TEMPLATE);
 
-    if (label && field == CTX_AUX_DATA)
-        fd = open(data_path_template, O_WRONLY | O_CREAT, 0600);
-    else
-        fd = mkstemp(data_path_template);
+	if (label && field == CTX_AUX_DATA)
+		fd = open(data_path_template, O_WRONLY | O_CREAT, 0600);
+	else
+		fd = mkstemp(data_path_template);
 
-    if (fd < 0)
-        return -EACCES;
+	if (fd < 0)
+		return -EACCES;
 
-    switch (fmt) {
-    case DATA_FMT_BASE64:
-        rc = attest_util_decode_data(strlen(string), string,
-                         data_sep - string + 1,
-                         &output_len, &output);
-        if (!rc) {
-            rc = attest_util_write_buf(fd, output, output_len);
-            free(output);
-        }
+	switch (fmt) {
+	case DATA_FMT_BASE64:
+		rc = attest_util_decode_data(strlen(string), string,
+					     data_sep - string + 1,
+					     &output_len, &output);
+		if (!rc) {
+			rc = attest_util_write_buf(fd, output, output_len);
+			free(output);
+		}
 
-        break;
-    case DATA_FMT_URI:
-        rc = attest_util_download_data(data_sep + 1, fd);
-        break;
-    default:
-        break;
-    }
+		break;
+	case DATA_FMT_URI:
+		rc = attest_util_download_data(data_sep + 1, fd);
+		break;
+	default:
+		break;
+	}
 
-    close(fd);
+	close(fd);
 
-    if (rc)
-        return rc;
+	if (rc)
+		return rc;
 
-    return attest_ctx_data_add_common(ctx, field, data_path_template,
-                      0, NULL, label);
+	return attest_ctx_data_add_common(ctx, field, data_path_template,
+					  0, NULL, label);
 }
 
 /**
@@ -373,35 +373,35 @@ int attest_ctx_data_add_string(attest_ctx_data *ctx, enum ctx_fields field,
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_data_new_string(enum data_formats fmt, size_t data_len,
-                   unsigned char *data, char **string)
+			       unsigned char *data, char **string)
 {
-    const char *format_str = data_formats_str[fmt];
-    size_t string_len;
-    int rc = 0;
+	const char *format_str = data_formats_str[fmt];
+	size_t string_len;
+	int rc = 0;
 
-    switch (fmt) {
-    case DATA_FMT_BASE64:
-        rc = attest_util_encode_data(data_len, data,
-                         strlen(format_str) + 1,
-                         &string_len, string);
-        if (rc)
-            return rc;
-        break;
-    case DATA_FMT_URI:
-        string_len = strlen(format_str) + 1 + data_len + 1;
-        *string = malloc(string_len);
-        if (!*string)
-            return -ENOMEM;
+	switch (fmt) {
+	case DATA_FMT_BASE64:
+		rc = attest_util_encode_data(data_len, data,
+					     strlen(format_str) + 1,
+					     &string_len, string);
+		if (rc)
+			return rc;
+		break;
+	case DATA_FMT_URI:
+		string_len = strlen(format_str) + 1 + data_len + 1;
+		*string = malloc(string_len);
+		if (!*string)
+			return -ENOMEM;
 
-        memcpy(*string + strlen(format_str) + 1, data, data_len);
-        break;
-    default:
-        break;
-    }
+		memcpy(*string + strlen(format_str) + 1, data, data_len);
+		break;
+	default:
+		break;
+	}
 
-    memcpy(*string, format_str, strlen(format_str));
-    (*string)[strlen(format_str)] = ':';
-    return rc;
+	memcpy(*string, format_str, strlen(format_str));
+	(*string)[strlen(format_str)] = ':';
+	return rc;
 }
 
 /**
@@ -412,19 +412,19 @@ int attest_ctx_data_new_string(enum data_formats fmt, size_t data_len,
  * @returns data_item pointer on success, NULL if not found
  */
 struct data_item *attest_ctx_data_lookup_by_label(attest_ctx_data *ctx,
-                          const char *label)
+						  const char *label)
 {
-    struct data_item *item;
+	struct data_item *item;
 
-    if (!ctx)
-        return NULL;
+	if (!ctx)
+		return NULL;
 
-    list_for_each_entry(item, &ctx->ctx_data[CTX_AUX_DATA], list) {
-        if (label && !strcmp(item->label, label))
-            return item;
-    }
+	list_for_each_entry(item, &ctx->ctx_data[CTX_AUX_DATA], list) {
+		if (label && !strcmp(item->label, label))
+			return item;
+	}
 
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -436,29 +436,29 @@ struct data_item *attest_ctx_data_lookup_by_label(attest_ctx_data *ctx,
  * @returns data_item pointer on success, NULL if not found
  */
 struct data_item *attest_ctx_data_lookup_by_digest(attest_ctx_data *ctx,
-                const char *algo, const uint8_t *digest)
+				const char *algo, const uint8_t *digest)
 {
-    struct data_item *item;
-    uint8_t data_digest[MAX_DIGEST_SIZE];
-    int rc, digest_len;
+	struct data_item *item;
+	uint8_t data_digest[MAX_DIGEST_SIZE];
+	int rc, digest_len;
 
-    if (!ctx)
-        return NULL;
+	if (!ctx)
+		return NULL;
 
-    list_for_each_entry(item, &ctx->ctx_data[CTX_AUX_DATA], list) {
-        if (!item->mapped_file)
-            continue;
+	list_for_each_entry(item, &ctx->ctx_data[CTX_AUX_DATA], list) {
+		if (!item->mapped_file)
+			continue;
 
-        rc = attest_util_calc_digest(algo, &digest_len, data_digest,
-                         item->len, item->data);
-        if (rc)
-            return NULL;
+		rc = attest_util_calc_digest(algo, &digest_len, data_digest,
+					     item->len, item->data);
+		if (rc)
+			return NULL;
 
-        if (!memcmp(data_digest, digest, digest_len))
-            return item;
-    }
+		if (!memcmp(data_digest, digest, digest_len))
+			return item;
+	}
 
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -468,7 +468,7 @@ struct data_item *attest_ctx_data_lookup_by_digest(attest_ctx_data *ctx,
  */
 attest_ctx_data *attest_ctx_data_get_global(void)
 {
-    return &global_ctx_data;
+	return &global_ctx_data;
 }
 
 /**
@@ -479,44 +479,44 @@ attest_ctx_data *attest_ctx_data_get_global(void)
  */
 int attest_ctx_data_init(attest_ctx_data **ctx)
 {
-    attest_ctx_data *new_ctx = &global_ctx_data;
-    int rc = 0, i;
+	attest_ctx_data *new_ctx = &global_ctx_data;
+	int rc = 0, i;
 
-    if (ctx) {
-        new_ctx = calloc(1, sizeof(*new_ctx));
-        if (!new_ctx)
-            return -ENOMEM;
-    }
+	if (ctx) {
+		new_ctx = calloc(1, sizeof(*new_ctx));
+		if (!new_ctx)
+			return -ENOMEM;
+	}
 
-    for (i = 0; i < CTX__LAST; i++)
-        INIT_LIST_HEAD(&new_ctx->ctx_data[i]);
+	for (i = 0; i < CTX__LAST; i++)
+		INIT_LIST_HEAD(&new_ctx->ctx_data[i]);
 
-    new_ctx->data_dir = strdup(TEMP_DIR_TEMPLATE);
-    if (!new_ctx->data_dir) {
-        rc = -ENOMEM;
-        goto out;
-    }
+	new_ctx->data_dir = strdup(TEMP_DIR_TEMPLATE);
+	if (!new_ctx->data_dir) {
+		rc = -ENOMEM;
+		goto out;
+	}
 
-    new_ctx->data_dir = mkdtemp(new_ctx->data_dir);
-    if (!new_ctx->data_dir) {
-        rc = -EACCES;
-        goto out;
-    }
+	new_ctx->data_dir = mkdtemp(new_ctx->data_dir);
+	if (!new_ctx->data_dir) {
+		rc = -EACCES;
+		goto out;
+	}
 
-    new_ctx->flags = CTX_INIT;
+	new_ctx->flags = CTX_INIT;
 
-    if (ctx)
-        *ctx = new_ctx;
+	if (ctx)
+		*ctx = new_ctx;
 
-    return rc;
+	return rc;
 out:
-    free(new_ctx->data_dir);
+	free(new_ctx->data_dir);
 
-    if (new_ctx != &global_ctx_data) {
-        free(new_ctx);
-    }
+	if (new_ctx != &global_ctx_data) {
+		free(new_ctx);
+	}
 
-    return rc;
+	return rc;
 }
 
 /**
@@ -525,49 +525,49 @@ out:
  */
 void attest_ctx_data_cleanup(attest_ctx_data *ctx)
 {
-    struct data_item *item, *temp_item;
-    struct list_head *head;
-    int i;
+	struct data_item *item, *temp_item;
+	struct list_head *head;
+	int i;
 
-    if (!ctx)
-        ctx = &global_ctx_data;
+	if (!ctx)
+		ctx = &global_ctx_data;
 
-    if (!(ctx->flags & CTX_INIT))
-        return;
+	if (!(ctx->flags & CTX_INIT))
+		return;
 
-    for (i = 0; i < CTX__LAST; i++) {
-        head = ctx->ctx_data + i;
+	for (i = 0; i < CTX__LAST; i++) {
+		head = ctx->ctx_data + i;
 
-        list_for_each_entry_safe(item, temp_item, head, list) {
-            list_del(&item->list);
+		list_for_each_entry_safe(item, temp_item, head, list) {
+			list_del(&item->list);
 
-            memset(item->data, 0, item->len);
+			memset(item->data, 0, item->len);
 
-            if (item->mapped_file &&
-                !strncmp(item->mapped_file, ctx->data_dir,
-                     strlen(ctx->data_dir))) {
-                munmap(item->data, item->len);
-                unlink(item->mapped_file);
-            } else if (!item->mapped_file) {
-                free(item->data);
-            }
+			if (item->mapped_file &&
+			    !strncmp(item->mapped_file, ctx->data_dir,
+				     strlen(ctx->data_dir))) {
+				munmap(item->data, item->len);
+				unlink(item->mapped_file);
+			} else if (!item->mapped_file) {
+				free(item->data);
+			}
 
-            free(item->label);
-            free(item->mapped_file);
-            free(item);
-        }
-    }
+			free(item->label);
+			free(item->mapped_file);
+			free(item);
+		}
+	}
 
-    if (ctx->data_dir) {
-        rmdir(ctx->data_dir);
-        free(ctx->data_dir);
-        ctx->data_dir = NULL;
-    }
+	if (ctx->data_dir) {
+		rmdir(ctx->data_dir);
+		free(ctx->data_dir);
+		ctx->data_dir = NULL;
+	}
 
-    memset(ctx, 0, sizeof(*ctx));
+	memset(ctx, 0, sizeof(*ctx));
 
-    if (ctx != &global_ctx_data)
-        free(ctx);
+	if (ctx != &global_ctx_data)
+		free(ctx);
 }
 
 /** @} */
@@ -585,50 +585,50 @@ void attest_ctx_data_cleanup(attest_ctx_data *ctx)
  * @returns verifier on success, NULL if not found
  */
 struct verifier_struct *attest_ctx_verifier_lookup(attest_ctx_verifier *ctx,
-                           const char *id)
+						   const char *id)
 {
-    struct verifier_struct *verifier;
+	struct verifier_struct *verifier;
 
-    if (!ctx)
-        return NULL;
+	if (!ctx)
+		return NULL;
 
-    list_for_each_entry(verifier, &ctx->verifiers, list) {
-        if (verifier->id == id)
-            return verifier;
-    }
+	list_for_each_entry(verifier, &ctx->verifiers, list) {
+		if (verifier->id == id)
+			return verifier;
+	}
 
-    return NULL;
+	return NULL;
 }
 
 static int attest_ctx_verifier_add_func(attest_ctx_verifier *ctx,
-                    const char *id, void *handle,
-                    verifier_func func, const char *req)
+					const char *id, void *handle,
+					verifier_func func, const char *req)
 {
-    struct verifier_struct *verifier;
-    int rc = 0;
+	struct verifier_struct *verifier;
+	int rc = 0;
 
-    if (attest_ctx_verifier_lookup(ctx, id))
-        return 0;
+	if (attest_ctx_verifier_lookup(ctx, id))
+		return 0;
 
-    verifier = malloc(sizeof(*verifier));
-    if (!verifier)
-        return -ENOMEM;
+	verifier = malloc(sizeof(*verifier));
+	if (!verifier)
+		return -ENOMEM;
 
-    verifier->id = id;
-    verifier->handle = handle;
-    verifier->func = func;
-    verifier->req = req ? strdup(req) : NULL;
-    if (req && !verifier->req) {
-        rc = -ENOMEM;
-        goto out;
-    }
+	verifier->id = id;
+	verifier->handle = handle;
+	verifier->func = func;
+	verifier->req = req ? strdup(req) : NULL;
+	if (req && !verifier->req) {
+		rc = -ENOMEM;
+		goto out;
+	}
 
-    list_add_tail(&verifier->list, &ctx->verifiers);
+	list_add_tail(&verifier->list, &ctx->verifiers);
 out:
-    if (rc)
-        free(verifier);
+	if (rc)
+		free(verifier);
 
-    return rc;
+	return rc;
 }
 
 /**
@@ -640,76 +640,76 @@ out:
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_verifier_req_add(attest_ctx_verifier *ctx,
-                const char *verifier_str, const char *req)
+				const char *verifier_str, const char *req)
 {
-    const char *separator;
-    struct verifier_struct *func_array;
-    char library_name[MAX_PATH_LENGTH];
-    void *handle;
-    int rc = 0, i = 0, *num_func;
+	const char *separator;
+	struct verifier_struct *func_array;
+	char library_name[MAX_PATH_LENGTH];
+	void *handle;
+	int rc = 0, i = 0, *num_func;
 
-    if (!ctx)
-        return -EINVAL;
+	if (!ctx)
+		return -EINVAL;
 
-    if (!req)
-        return -EINVAL;
+	if (!req)
+		return -EINVAL;
 
-    separator = strchr(verifier_str, '|');
-    if (!separator)
-        separator = verifier_str + strlen(verifier_str);
+	separator = strchr(verifier_str, '|');
+	if (!separator)
+		separator = verifier_str + strlen(verifier_str);
 
-    snprintf(library_name, sizeof(library_name), "libverifier_%.*s.so",
-         (int)(separator - verifier_str), verifier_str);
+	snprintf(library_name, sizeof(library_name), "libverifier_%.*s.so",
+		 (int)(separator - verifier_str), verifier_str);
 
-    handle = dlopen(library_name, RTLD_LAZY);
-    if (!handle)
-        return -ENOENT;
+	handle = dlopen(library_name, RTLD_LAZY);
+	if (!handle)
+		return -ENOENT;
 
-    num_func = dlsym(handle, "num_func");
-    if (!num_func) {
-        rc = -ENOENT;
-        goto out;
-    }
+	num_func = dlsym(handle, "num_func");
+	if (!num_func) {
+		rc = -ENOENT;
+		goto out;
+	}
 
-    func_array = dlsym(handle, "func_array");
-    if (!func_array) {
-        rc = -ENOENT;
-        goto out;
-    }
+	func_array = dlsym(handle, "func_array");
+	if (!func_array) {
+		rc = -ENOENT;
+		goto out;
+	}
 
-    for (i = 0; i < *num_func; i++) {
-        if (!strcmp(func_array[i].id, verifier_str))
-            break;
-    }
+	for (i = 0; i < *num_func; i++) {
+		if (!strcmp(func_array[i].id, verifier_str))
+			break;
+	}
 
-    if (i == *num_func) {
-        rc = -ENOENT;
-        goto out;
-    }
+	if (i == *num_func) {
+		rc = -ENOENT;
+		goto out;
+	}
 
-    rc = attest_ctx_verifier_add_func(ctx, func_array[i].id, handle,
-                      func_array[i].func, req);
+	rc = attest_ctx_verifier_add_func(ctx, func_array[i].id, handle,
+					  func_array[i].func, req);
 out:
-    if (rc)
-        dlclose(handle);
+	if (rc)
+		dlclose(handle);
 
-    return rc;
+	return rc;
 }
 
 static void attest_ctx_verifier_free_logs(attest_ctx_verifier *ctx)
 {
-    struct verification_log *log, *temp_log;
+	struct verification_log *log, *temp_log;
 
-    list_for_each_entry_safe(log, temp_log, &ctx->logs, list) {
-        list_del(&log->list);
-        if (log == &unknown_log)
-            break;
+	list_for_each_entry_safe(log, temp_log, &ctx->logs, list) {
+		list_del(&log->list);
+		if (log == &unknown_log)
+			break;
 
-        if (strlen(log->reason))
-            free(log->reason);
+		if (strlen(log->reason))
+			free(log->reason);
 
-        free(log);
-    }
+		free(log);
+	}
 }
 
 /**
@@ -720,30 +720,30 @@ static void attest_ctx_verifier_free_logs(attest_ctx_verifier *ctx)
  * @returns log on success, NULL on error
  */
 struct verification_log *attest_ctx_verifier_add_log(attest_ctx_verifier *ctx,
-                             const char *operation)
+						     const char *operation)
 {
-    struct verification_log *new_log, *last_log;
+	struct verification_log *new_log, *last_log;
 
-    if (!ctx)
-        return NULL;
+	if (!ctx)
+		return NULL;
 
-    last_log = list_last_entry(&ctx->logs, struct verification_log, list);
-    if (last_log == &unknown_log)
-        return NULL;
+	last_log = list_last_entry(&ctx->logs, struct verification_log, list);
+	if (last_log == &unknown_log)
+		return NULL;
 
-    new_log = calloc(1, sizeof(*new_log));
-    if (!new_log) {
-        attest_ctx_verifier_free_logs(ctx);
-        new_log = &unknown_log;
-        return NULL;
-    }
+	new_log = calloc(1, sizeof(*new_log));
+	if (!new_log) {
+		attest_ctx_verifier_free_logs(ctx);
+		new_log = &unknown_log;
+		return NULL;
+	}
 
-    new_log->operation = operation;
-    new_log->result = "in progress";
-    new_log->reason = "";
+	new_log->operation = operation;
+	new_log->result = "in progress";
+	new_log->reason = "";
 
-    list_add(&new_log->list, &ctx->logs);
-    return new_log;
+	list_add(&new_log->list, &ctx->logs);
+	return new_log;
 }
 
 /**
@@ -754,20 +754,20 @@ struct verification_log *attest_ctx_verifier_add_log(attest_ctx_verifier *ctx,
  */
 struct verification_log *attest_ctx_verifier_get_log(attest_ctx_verifier *ctx)
 {
-    struct verification_log *log;
+	struct verification_log *log;
 
-    if (!ctx)
-        return NULL;
+	if (!ctx)
+		return NULL;
 
-    if (list_empty(&ctx->logs))
-        return NULL;
+	if (list_empty(&ctx->logs))
+		return NULL;
 
-    list_for_each_entry(log, &ctx->logs, list) {
-        if (!strcmp(log->result, "in progress"))
-            return log;
-    }
+	list_for_each_entry(log, &ctx->logs, list) {
+		if (!strcmp(log->result, "in progress"))
+			return log;
+	}
 
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -777,26 +777,26 @@ struct verification_log *attest_ctx_verifier_get_log(attest_ctx_verifier *ctx)
  * @param[in] ...	data to be added to the message
  */
 void attest_ctx_verifier_set_log(struct verification_log *log,
-                 const char *fmt, ...)
+				 const char *fmt, ...)
 {
-    char buf[MAX_LOG_LENGTH], *reason;
-    va_list list;
+	char buf[MAX_LOG_LENGTH], *reason;
+	va_list list;
 
-    if (!log)
-        return;
+	if (!log)
+		return;
 
-    if (strlen(log->reason))
-        return;
+	if (strlen(log->reason))
+		return;
 
-    va_start(list, fmt);
+	va_start(list, fmt);
 
-    vsnprintf(buf, sizeof(buf), fmt, list);
-    reason = strdup(buf);
-    if (!reason)
-        reason = unknown_log.reason;
+	vsnprintf(buf, sizeof(buf), fmt, list);
+	reason = strdup(buf);
+	if (!reason)
+		reason = unknown_log.reason;
 
-    log->reason = reason;
-    log->result = "failed";
+	log->reason = reason;
+	log->result = "failed";
 }
 
 /**
@@ -806,35 +806,35 @@ void attest_ctx_verifier_set_log(struct verification_log *log,
  * @param[in] result	result of the operation performed
  */
 void attest_ctx_verifier_end_log(attest_ctx_verifier *ctx,
-                 struct verification_log *log, int result)
+				 struct verification_log *log, int result)
 {
-    struct verification_log *previous_log;
-    char buf[MAX_LOG_LENGTH];
+	struct verification_log *previous_log;
+	char buf[MAX_LOG_LENGTH];
 
-    if (!ctx)
-        return;
+	if (!ctx)
+		return;
 
-    log->result = !result ? "ok" : "failed";
+	log->result = !result ? "ok" : "failed";
 
-    if (!result)
-        return;
+	if (!result)
+		return;
 
-    list_for_each_entry_reverse(previous_log, &log->list, list) {
-        if ((struct list_head *)previous_log == &ctx->logs)
-            break;
+	list_for_each_entry_reverse(previous_log, &log->list, list) {
+		if ((struct list_head *)previous_log == &ctx->logs)
+			break;
 
-        if (strlen(previous_log->reason)) {
-            snprintf(buf, sizeof(buf), "%s failed",
-                 previous_log->operation);
-            if (strlen(log->reason))
-                free(log->reason);
-            log->reason = strdup(buf);
-            if (!log->reason)
-                log->reason = unknown_log.reason;
+		if (strlen(previous_log->reason)) {
+			snprintf(buf, sizeof(buf), "%s failed",
+				 previous_log->operation);
+			if (strlen(log->reason))
+				free(log->reason);
+			log->reason = strdup(buf);
+			if (!log->reason)
+				log->reason = unknown_log.reason;
 
-            break;
-        }
-    }
+			break;
+		}
+	}
 }
 
 /**
@@ -844,7 +844,7 @@ void attest_ctx_verifier_end_log(attest_ctx_verifier *ctx,
  */
 attest_ctx_verifier *attest_ctx_verifier_get_global(void)
 {
-    return &global_ctx_verifier;
+	return &global_ctx_verifier;
 }
 
 /**
@@ -855,24 +855,24 @@ attest_ctx_verifier *attest_ctx_verifier_get_global(void)
  */
 int attest_ctx_verifier_init(attest_ctx_verifier **ctx)
 {
-    attest_ctx_verifier *new_ctx = &global_ctx_verifier;
+	attest_ctx_verifier *new_ctx = &global_ctx_verifier;
 
-    if (ctx) {
-        new_ctx = calloc(1, sizeof(*new_ctx));
-        if (!new_ctx)
-            return -ENOMEM;
-    }
+	if (ctx) {
+		new_ctx = calloc(1, sizeof(*new_ctx));
+		if (!new_ctx)
+			return -ENOMEM;
+	}
 
-    INIT_LIST_HEAD(&new_ctx->event_logs);
-    INIT_LIST_HEAD(&new_ctx->verifiers);
-    INIT_LIST_HEAD(&new_ctx->logs);
+	INIT_LIST_HEAD(&new_ctx->event_logs);
+	INIT_LIST_HEAD(&new_ctx->verifiers);
+	INIT_LIST_HEAD(&new_ctx->logs);
 
-    new_ctx->flags = CTX_INIT;
+	new_ctx->flags = CTX_INIT;
 
-    if (ctx)
-        *ctx = new_ctx;
+	if (ctx)
+		*ctx = new_ctx;
 
-    return 0;
+	return 0;
 }
 
 /**
@@ -884,13 +884,13 @@ int attest_ctx_verifier_init(attest_ctx_verifier **ctx)
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_verifier_set_key(attest_ctx_verifier *ctx, int key_len,
-                unsigned char *key)
+				unsigned char *key)
 {
-    if (key_len > sizeof(ctx->key))
-        return -EINVAL;
+	if (key_len > sizeof(ctx->key))
+		return -EINVAL;
 
-    memcpy(ctx->key, key, key_len);
-    return 0;
+	memcpy(ctx->key, key, key_len);
+	return 0;
 }
 
 /**
@@ -902,14 +902,14 @@ int attest_ctx_verifier_set_key(attest_ctx_verifier *ctx, int key_len,
  * @returns 0 on success, a negative value on error
  */
 int attest_ctx_verifier_set_pcr_mask(attest_ctx_verifier *ctx,
-                     int pcr_mask_len, uint8_t *pcr_mask)
+				     int pcr_mask_len, uint8_t *pcr_mask)
 {
-    if (pcr_mask_len > sizeof(ctx->pcr_mask))
-        return -EINVAL;
+	if (pcr_mask_len > sizeof(ctx->pcr_mask))
+		return -EINVAL;
 
-    memset(ctx->pcr_mask, 0, sizeof(ctx->pcr_mask));
-    memcpy(ctx->pcr_mask, pcr_mask, pcr_mask_len);
-    return 0;
+	memset(ctx->pcr_mask, 0, sizeof(ctx->pcr_mask));
+	memcpy(ctx->pcr_mask, pcr_mask, pcr_mask_len);
+	return 0;
 }
 
 /**
@@ -918,7 +918,7 @@ int attest_ctx_verifier_set_pcr_mask(attest_ctx_verifier *ctx,
  */
 void attest_ctx_verifier_set_flags(attest_ctx_verifier *ctx, uint16_t flags)
 {
-    ctx->flags |= flags;
+	ctx->flags |= flags;
 }
 
 /**
@@ -927,27 +927,27 @@ void attest_ctx_verifier_set_flags(attest_ctx_verifier *ctx, uint16_t flags)
  */
 void attest_ctx_verifier_cleanup(attest_ctx_verifier *ctx)
 {
-    struct verifier_struct *v, *temp_v;
+	struct verifier_struct *v, *temp_v;
 
-    if (!ctx)
-        ctx = &global_ctx_verifier;
+	if (!ctx)
+		ctx = &global_ctx_verifier;
 
-    if (!(ctx->flags & CTX_INIT))
-        return;
+	if (!(ctx->flags & CTX_INIT))
+		return;
 
-    list_for_each_entry_safe(v, temp_v, &ctx->verifiers, list) {
-        dlclose(v->handle);
-        list_del(&v->list);
-        free(v->req);
-        free(v);
-    }
+	list_for_each_entry_safe(v, temp_v, &ctx->verifiers, list) {
+		dlclose(v->handle);
+		list_del(&v->list);
+		free(v->req);
+		free(v);
+	}
 
-    attest_ctx_verifier_free_logs(ctx);
+	attest_ctx_verifier_free_logs(ctx);
 
-    memset(ctx, 0, sizeof(*ctx));
+	memset(ctx, 0, sizeof(*ctx));
 
-    if (ctx != &global_ctx_verifier)
-        free(ctx);
+	if (ctx != &global_ctx_verifier)
+		free(ctx);
 }
 /** @}*/
 /** @}*/
