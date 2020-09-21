@@ -22,6 +22,10 @@ BuildRequires:  openssl-devel
 This package includes the tools to perform remote attestation with a quote
 or a TPM key.
 
+%package devel
+Summary: Development headers and libraries for %{name}
+Requires:%{name} = %{version}-%{release}
+
 %prep
 %autosetup -n %{name}-%{version} -p1
 %setup -a 1 -n %{name}-%{version}
@@ -71,6 +75,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/ekcert_read.sh
 %{_bindir}/attest_parse_json
 
+%files devel
+%{_prefix}/include/attest-tools
 
 %changelog
 * Mon Sep 14 2020 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.90-2

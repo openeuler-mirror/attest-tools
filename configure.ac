@@ -61,7 +61,7 @@ CFLAGS="$CFLAGS -Wall -Werror -DTPM_POSIX"
 AC_SUBST(CFLAGS)
 
 AC_SUBST(TSS_INCLUDE)
-AC_OUTPUT([Makefile libs/Makefile libs/event_log/Makefile
+AC_OUTPUT([Makefile libs/Makefile include/Makefile libs/event_log/Makefile
 	   verifiers/Makefile src/Makefile scripts/Makefile])
 
 	   cat <<EOF
