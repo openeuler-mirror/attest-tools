@@ -398,10 +398,11 @@ static int collect_data(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
 
 			rc = attest_ctx_data_add(d_ctx, CTX_EVENT_LOG, len,
 						 data, "bios");
-		} else if (!stat(BIOS_FILENAME, &st)) {
+		}
+	} else {
+		if (!stat(BIOS_FILENAME, &st))
 			rc = attest_ctx_data_add_file(d_ctx, CTX_EVENT_LOG,
 						      BIOS_FILENAME, "bios");
-		}
 	}
 
 	if (rc)
@@ -416,10 +417,11 @@ static int collect_data(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
 
 			rc = attest_ctx_data_add(d_ctx, CTX_EVENT_LOG, len,
 						 data, "ima");
-		} else if (!stat(IMA_FILENAME, &st)) {
+		}
+	} else {
+		if (!stat(IMA_FILENAME, &st))
 			rc = attest_ctx_data_add_file(d_ctx, CTX_EVENT_LOG,
 						      IMA_FILENAME, "ima");
-		}
 	}
 
 	if (rc)
