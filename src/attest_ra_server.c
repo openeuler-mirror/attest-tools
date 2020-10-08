@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	uint8_t pcr_mask[3] = { 0 };
 	int pcr_list[IMPLEMENTATION_PCR];
 	uint16_t verifier_flags = 0;
-	int rc, option_index, c, fd, fd_socket, op, reuse_addr = 1;
+	int rc, option_index, c, fd, fd_socket, op, reuse_addr = 1, i;
 	char *cert_subject_entries[] = {
 		"DE",
 		"Bayern",
@@ -132,6 +132,13 @@ int main(int argc, char *argv[])
 					pcr_list);
 		if (rc < 0)
 			return rc;
+
+		for (i = 0; i < sizeof(pcr_list) / sizeof(*pcr_list); i++) {
+			if (pcr_list[i] == -1)
+				continue;
+
+			pcr_mask[pcr_list[i] / 8] |= 1 << (pcr_list[i] % 8);
+		}
 	}
 
 	OpenSSL_add_all_algorithms();
