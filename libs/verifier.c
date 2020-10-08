@@ -362,6 +362,27 @@ static int attest_verifier_check_quote_info(attest_ctx_data *d_ctx,
 					  quote_info->pcrDigest.b.buffer, 1);
 }
 
+static int attest_verifier_check_quote_pcr_mask(attest_ctx_data *d_ctx,
+						attest_ctx_verifier *v_ctx,
+						TPMS_QUOTE_INFO *quote_info)
+{
+	struct verification_log *log;
+	TPML_PCR_SELECTION *pcrs;
+	int rc;
+
+	log = attest_ctx_verifier_add_log(v_ctx, "check quote PCR mask");
+
+	pcrs = &quote_info->pcrSelect;
+
+	rc = attest_util_check_mask(pcrs->pcrSelections[0].sizeofSelect,
+				    pcrs->pcrSelections[0].pcrSelect,
+				    sizeof(v_ctx->pcr_mask), v_ctx->pcr_mask);
+	check_goto(rc, rc, out, v_ctx, "PCR mask requirement not satisfied");
+out:
+	attest_ctx_verifier_end_log(v_ctx, log, rc);
+	return rc;
+}
+
 static int attest_verifier_check_extra_data(attest_ctx_data *d_ctx,
 					    attest_ctx_verifier *v_ctx,
 					    TPM2B_DATA *extraData)
@@ -434,6 +455,11 @@ int attest_verifier_check_tpms_attest(attest_ctx_data *d_ctx,
 	case TPM_ST_ATTEST_QUOTE:
 		rc = attest_verifier_check_extra_data(d_ctx, v_ctx,
 					&a.extraData);
+		if (rc)
+			break;
+
+		rc = attest_verifier_check_quote_pcr_mask(d_ctx, v_ctx,
+					(TPMS_QUOTE_INFO *)&a.attested);
 		if (rc)
 			break;
 
