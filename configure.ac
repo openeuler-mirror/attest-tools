@@ -2,7 +2,7 @@
 # configure.in for the attest-tools project
 #
 
-AC_INIT(attest-tools, 0.2.0, <roberto.sassu@huawei.com>)
+AC_INIT(attest-tools, 0.2.91, <roberto.sassu@huawei.com>)
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 
 # Enable debug.

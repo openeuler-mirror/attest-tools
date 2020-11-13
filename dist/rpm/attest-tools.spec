@@ -1,6 +1,6 @@
 name:           attest-tools
-Version:        0.2.90
-Release:        2
+Version:        0.2.91
+Release:        1
 Summary:        Attestation tools
 
 Source0:        https://gitee.com/openeuler/%{name}/repository/archive/v%{version}.tar.gz
@@ -77,6 +77,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %{_prefix}/include/attest-tools
+
+%changelog
+* Fri Nov 13 2020 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.91-1
+- Update algorithm for boot_aggregate calculation
+- Install includes
+- Bug fixes
 
 %changelog
 * Mon Sep 14 2020 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.90-2
