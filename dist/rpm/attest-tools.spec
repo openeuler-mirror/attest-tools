@@ -1,9 +1,9 @@
 name:           attest-tools
 Version:        0.2.90
-Release:        1%{?dist}
+Release:        2
 Summary:        Attestation tools
 
-Source0:        %{name}-%{version}.tar.gz
+Source0:        https://gitee.com/openeuler/%{name}/repository/archive/v%{version}.tar.gz
 Source1:	openssl_tpm2_engine-2.4.2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 License:        GPL-2.0
@@ -30,13 +30,10 @@ or a TPM key.
 autoreconf -iv
 %configure
 make %{?_smp_mflags}
-make check
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT
-mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/ima/digest_lists
-mkdir -p ${RPM_BUILD_ROOT}%{_mandir}/man1
+%make_install %{?_smp_mflags}
 
 %post
 ldconfig
@@ -76,10 +73,13 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Sep 14 2020 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.90-2
+- Change Source0 in spec file
+
 * Wed Jul 08 2020 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.90
 - Bug fixes
 
-* Fri Dec 12 2019 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.0
+* Thu Dec 12 2019 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.0
 - Add quote protocol
 - Add parser for TPM 2.0 event log
 - Add evm_key and dummy verifiers
