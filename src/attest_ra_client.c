@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	enum request_types type = REQUEST__LAST;
 	char *message_in = NULL, *message_out = NULL;
 	char *test_server_fqdn = SERVER_HOSTNAME, *pcr_list_str = NULL;
-	char **attest_data_ptr = NULL, *attest_data, *attest_data_path;
+	char **attest_data_ptr = NULL, *attest_data, *attest_data_path = NULL;
 	char *pcr_alg_name = "sha1";
 	char hostname[128];
 	int skip_sig_ver = 0, send_unsigned_files = 0;
