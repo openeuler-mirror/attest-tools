@@ -239,18 +239,52 @@ scenario.
 ### Create an AK and request a certificate:
 
 #### Preliminary Steps (on the server)
-1) use existing CA or generate a new custom CA (key: cakey.pem,
-   key password: 1234, cert: cacert.pem)  
-2) configure a TPM (a software TPM is sufficient)  
+1) use existing CA or generate a new custom CA (key: ca_key.pem,
+   key password: 1234, cert: ca_cert.pem)  
+```
+$ openssl genrsa -des3 -out ca_key.pem 4096
+$ openssl req -x509 -new -nodes -key ca_key.pem -sha256 -days 1024 -out ca_cert.pem
+$ mkdir demoCA
+$ mkdir demoCA/newcerts
+$ echo 01 >demoCA/serial
+$ touch demoCA/index.txt
+```
+Update /etc/ssl/openssl.cnf, with:
+```
+[ CA_default ]
+...
+unique_subject = no
+...
+copy_extensions = copy
+...
+```
+2) configure a TPM (a software TPM is sufficient) 
 3) install openssl_tpm2_engine  
 4) create a key and certificate for the TLS server  
-
+```
+$ openssl genrsa -out key.pem
+$ openssl req -new -key key.pem -out cert.csr
+$ openssl x509 -req -in cert.csr -CA ca_cert.pem -CAkey ca_key.pem -CAcreateserial -out cert.pem
+```
 #### Preliminary Steps (on the client)
-1) obtain the EK credential from TPM NVRAM: ekcert_read.sh -a sha256 \
-   -o ek_cert.pem  
+1) obtain the EK credential from TPM NVRAM:
+Make sure ibmtss/utils/createekcert.c contains expected rootIssuerEntriesRsa[] values.
+Copy the same CA key and CA cert from server to client.
+```
+$ # software TPM case as an example
+$ tssstartup
+$ tsscreateekcert -cakey ca_key.pem -capwd 1234
+$ tsscreateprimary -hi o -st
+$ tssevictcontrol -hi o -ho 80000000 -hp 81000001
+$ tssflushcontext -ha 80000000
+$ ekcert_read.sh -a sha256 -o ek_cert.pem
+```
 2) manually retrieve CA certificates of EK credential and add their path to
    the file 'list', one per line  
+```
+$ echo ca_cert.pem > list
 
+```
 #### Steps (on the server)
 1) generate verifier requirements:
 ```
@@ -267,8 +301,7 @@ $ attest_ra_server -r req-dummy.json
 $ attest_ra_client -a -s <attest_server FQDN>
 ```
 
-Create a TPM key not bound to any PCR, save attestation data to attest.txt
-and request a certificate:
+### Create a TPM key not bound to any PCR, save attestation data to attest.txt and request a certificate:
 
 #### Steps (on the client)
 1) execute:
