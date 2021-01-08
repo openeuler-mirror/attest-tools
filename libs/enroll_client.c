@@ -610,7 +610,7 @@ int attest_enroll_add_csr(char *key_path, char *csr_subject_entries[],
 		goto out;
 	}
 
-	pk = ENGINE_load_public_key(e, key_path, NULL, NULL);
+	pk = ENGINE_load_private_key(e, key_path, NULL, NULL);
 	if (!pk) {
 		printf("Cannot load the key\n");
 		goto out;
