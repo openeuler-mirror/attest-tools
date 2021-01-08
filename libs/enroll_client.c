@@ -435,7 +435,10 @@ static int collect_data(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
 
 	rc = attest_event_log_parse_verify(d_ctx, v_ctx, 1);
 out:
-	return 0;
+	if (rc)
+		printf("Failed to collect data, rc: %d\n", rc);
+
+	return rc;
 }
 
 static int build_key_policy(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
