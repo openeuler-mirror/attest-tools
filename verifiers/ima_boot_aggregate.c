@@ -55,7 +55,7 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 						       algo_len);
 
 	for (i = 0; i < 10; i++) {
-		if (digest.hashAlg == TPM_ALG_SHA1 && i == 8 && i == 9)
+		if (digest.hashAlg == TPM_ALG_SHA1 && (i == 8 || i == 9))
 			continue;
 
 		pcr = attest_pcr_get(v_ctx, i, digest.hashAlg);
