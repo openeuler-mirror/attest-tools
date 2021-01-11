@@ -74,6 +74,8 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 			      false);
 		check_goto(!key, -ENOENT, out, v_ctx,
 			"IMA public key cannot be retrieved");
+
+		key_entry->flags |= LOG_ENTRY_PROCESSED;
 	}
 
         list_for_each_entry(cur_log_entry, &ima_log->logs, list) {
@@ -111,9 +113,6 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 
 		cur_log_entry->flags |= LOG_ENTRY_PROCESSED;
 	}
-
-	if (key_entry)
-		key_entry->flags |= LOG_ENTRY_PROCESSED;
 out:
 	X509_free(cert);
 	free_keys(&head);
