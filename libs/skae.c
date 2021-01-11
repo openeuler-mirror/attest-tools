@@ -96,7 +96,7 @@ static X509_EXTENSION *skae_get_ext(X509 *cert, X509_REQ *req,
 		goto out;
 
 	if (cert)
-		ext = X509_get_ext(cert, rc);
+		ext = X509_EXTENSION_dup(X509_get_ext(cert, rc));
 	else
 		ext = sk_X509_EXTENSION_value(exts, rc);
 out:
@@ -178,6 +178,8 @@ static int skae_verify_common(attest_ctx_data *d_ctx,
 	rc = 1;
 out:
 	EVP_PKEY_free(pk);
+	X509_EXTENSION_free(skae_ext);
+	X509_EXTENSION_free(skae_url_ext);
 
 	attest_ctx_verifier_end_log(v_ctx, log, !rc);
 	return rc;
