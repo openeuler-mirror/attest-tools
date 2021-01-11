@@ -81,13 +81,11 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 
 		rc = ima_template_get_digest(ima_log_entry, &algo_len,
 					     &algo_ptr, &digest_len, &digest_ptr);
-		if (rc < 0)
-			continue;
+		check_goto(rc, rc, out, v_ctx, "event digest not found");
 
 		rc = ima_template_get_eventname(ima_log_entry, &eventname_len,
 						&eventname_ptr);
-		if (rc < 0)
-			continue;
+		check_goto(rc, rc, out, v_ctx, "event name not found");
 
 		if (!strcmp(eventname_ptr, "boot_aggregate"))
 			continue;
@@ -109,8 +107,7 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 
 		rc = verify_sig(&head, -1, (u8 *)sig_ptr, sig_len,
 				(u8 *)digest_ptr, algo);
-		if (rc < 0)
-			continue;
+		check_goto(rc, rc, out, v_ctx, "invalid signature");
 
 		cur_log_entry->flags |= LOG_ENTRY_PROCESSED;
 	}
