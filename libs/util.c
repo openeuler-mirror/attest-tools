@@ -54,7 +54,7 @@ int attest_util_read_file(const char *path, size_t *len, unsigned char **data)
 	int rc = 0, fd;
 
 	if (stat(path, &st) == -1)
-		return -EACCES;
+		return -ENOENT;
 
 	fd = open(path, O_RDONLY);
 	if (fd < 0)
