@@ -69,6 +69,8 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 					file_content_len, file_content,
 					basename(data_ptr));
 			munmap(file_content, file_content_len);
+		} else if (rc == -ENOENT) {
+			rc = 0;
 		}
 	}
 
