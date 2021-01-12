@@ -209,12 +209,17 @@ static int attest_event_log_verify_entries(attest_ctx_data *d_ctx,
 			   "verifier %s returned an error\n", verifier->id);
 	}
 
-	list_for_each_entry(event_log, &v_ctx->event_logs, list)
-		list_for_each_entry(log_entry, &event_log->logs, list)
+	list_for_each_entry(event_log, &v_ctx->event_logs, list) {
+		i = 0;
+
+		list_for_each_entry(log_entry, &event_log->logs, list) {
 			check_goto(!(log_entry->flags & LOG_ENTRY_PROCESSED),
 				   -ENOENT, out, v_ctx,
 				   "event log %s: log entry #%d not processed",
-				   event_log->id, i++);
+				   event_log->id, i);
+			i++;
+		}
+	}
 out:
 	attest_ctx_verifier_end_log(v_ctx, log, rc);
 	return rc;
