@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "ctx.h"
 #include "util.h"
@@ -34,6 +35,9 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 	uint32_t data_len;
 	unsigned char *file_content;
 	size_t file_content_len;
+	DIR *dir;
+	struct dirent *d_entry;
+	char path[PATH_MAX];
 	int rc = 0;
 
 	bios_log = attest_event_log_get(v_ctx, "bios");
@@ -44,6 +48,27 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 	ima_log = attest_event_log_get(v_ctx, "ima");
 	if (!ima_log)
 		return -ENOENT;
+
+	dir = opendir("/etc/keys");
+
+	while ((d_entry = readdir(dir))) {
+		if (!strcmp(d_entry->d_name, ".") ||
+		    !strcmp(d_entry->d_name, ".."))
+			continue;
+
+		snprintf(path, sizeof(path), "/etc/keys/%s", d_entry->d_name);
+
+		rc = attest_util_read_file(path, &file_content_len,
+					   &file_content);
+		if (!rc) {
+			rc = attest_ctx_data_add_copy(d_ctx, CTX_AUX_DATA,
+					file_content_len, file_content,
+					d_entry->d_name);
+			munmap(file_content, file_content_len);
+		}
+	}
+
+	closedir(dir);
 
 	list_for_each_entry(cur_log_entry, &ima_log->logs, list) {
 		ima_log_entry = (struct ima_log_entry *)cur_log_entry->log;
