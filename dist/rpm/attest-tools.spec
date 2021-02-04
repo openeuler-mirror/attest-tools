@@ -25,6 +25,9 @@ or a TPM key.
 Summary: Development headers and libraries for %{name}
 Requires:%{name} = %{version}-%{release}
 
+%description devel
+This package includes the headers of the libraries.
+
 %prep
 %autosetup -n %{name}-%{version} -p1
 
@@ -82,7 +85,6 @@ rm -rf $RPM_BUILD_ROOT
 - Install includes
 - Bug fixes
 
-%changelog
 * Mon Sep 14 2020 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.90-2
 - Change Source0 in spec file
 
