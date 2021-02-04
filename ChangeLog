@@ -1,4 +1,15 @@
-2020-11-13
+2021-02-10  Roberto Sassu <roberto.sassu@huawei.com>
+	version 0.2.92
+	* remove dependency on openssl_tpm2_engine
+	* add support for PGP keys
+	* move configuration files to /etc/attest-tools
+	* obtain CA files from openssl configuration
+	* make primary key persistent
+	* add systemd units and requirements examples
+	* bug fixes
+
+2020-11-13  Roberto Sassu <roberto.sassu@huawei.com>
+	version 0.2.91
 	* update algorithm for boot_aggregate calculation
 	* install includes
 	* bug fixes
