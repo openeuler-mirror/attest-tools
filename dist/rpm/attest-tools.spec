@@ -4,7 +4,6 @@ Release:        1
 Summary:        Attestation tools
 
 Source0:        https://gitee.com/openeuler/%{name}/repository/archive/v%{version}.tar.gz
-Source1:	openssl_tpm2_engine-2.4.2.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 License:        GPL-2.0
 Url:            https://gitee.com/openeuler/attest-tools
@@ -28,7 +27,6 @@ Requires:%{name} = %{version}-%{release}
 
 %prep
 %autosetup -n %{name}-%{version} -p1
-%setup -a 1 -n %{name}-%{version}
 
 %build
 autoreconf -iv

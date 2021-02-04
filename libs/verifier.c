@@ -38,7 +38,7 @@
 #include "verifier.h"
 #include "crypto.h"
 
-#include "tpm2-common.h"
+#include <ibmtss/cryptoutils.h>
 
 static int attest_verifier_check_signature(attest_ctx_data *d_ctx,
 					   attest_ctx_verifier *v_ctx,
@@ -169,6 +169,28 @@ out:
 	return rc;
 }
 
+static int attest_tpm2_to_openssl_public(TPMT_PUBLIC *publicArea,
+					 EVP_PKEY **evpPubkey)
+{
+	int rc;
+
+	switch (publicArea->type) {
+	case TPM_ALG_RSA:
+		rc = convertRsaPublicToEvpPubKey(evpPubkey,
+						 &publicArea->unique.rsa);
+		break;
+	case TPM_ALG_ECC:
+		rc = convertEcPublicToEvpPubKey(evpPubkey,
+						&publicArea->unique.ecc);
+		break;
+	default:
+		rc = -ENOTSUP;
+		break;
+	}
+
+	return rc;
+}
+
 static int attest_verifier_check_public_key(attest_ctx_data *d_ctx,
 					    attest_ctx_verifier *v_ctx,
 					    TPM_ALG_ID *nameAlg,
@@ -198,9 +220,9 @@ static int attest_verifier_check_public_key(attest_ctx_data *d_ctx,
 
 	*nameAlg = p.nameAlg;
 
-	key_tpm = tpm2_to_openssl_public(&p);
-	check_goto(!key_tpm, -EINVAL, out, v_ctx,
-		   "tpm2_to_openssl_public() error");
+	rc = attest_tpm2_to_openssl_public(&p, &key_tpm);
+	check_goto(rc, -ENOTSUP, out, v_ctx,
+		   "Unknown publicArea.type %04hx unsupported\n", p.type);
 
 	rc = !EVP_PKEY_cmp(key, key_tpm);
 	EVP_PKEY_free(key_tpm);

@@ -13,4 +13,5 @@ attest_tools_include_HEADERS = list.h \
 			       pcr.h \
 			       event_log/bios.h \
 			       event_log/ima.h \
-			       ctx.h
+			       ctx.h \
+			       tpm2-asn.h
