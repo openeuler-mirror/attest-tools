@@ -168,7 +168,7 @@ int attest_tss_getekcert(TSS_CONTEXT *tssContext, TPMI_ALG_PUBLIC algPublic,
 static int asymPublicTemplate(TPMT_PUBLIC *publicArea,
 			      TPMI_ALG_PUBLIC algPublic, TPMI_ECC_CURVE curveID,
 			      TPMI_ALG_HASH nalg, TPMI_ALG_HASH halg,
-			      int restricted, const char *policyFilename)
+			      enum key_types type, const char *policyFilename)
 {
 	TPMU_PUBLIC_PARMS *params;
 	TPM_RC rc = 0;
@@ -181,18 +181,25 @@ static int asymPublicTemplate(TPMT_PUBLIC *publicArea,
 	publicArea->type = algPublic;
 	publicArea->nameAlg = nalg;
 
-	if (restricted) {
+	if (type == KEY_TYPE_AK || type == KEY_TYPE_PRIMARY)
 		publicArea->objectAttributes.val |= TPMA_OBJECT_RESTRICTED;
+
+	if (type == KEY_TYPE_AK)
 		publicArea->objectAttributes.val |= TPMA_OBJECT_SIGN;
-	} else {
+	else
 		publicArea->objectAttributes.val |= TPMA_OBJECT_DECRYPT;
-	}
 	params = &publicArea->parameters;
 
 	if (algPublic == TPM_ALG_RSA) {
-		params->rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
+		if (type == KEY_TYPE_PRIMARY) {
+			params->rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+			params->rsaDetail.symmetric.keyBits.aes = 128;
+			params->rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
+		} else {
+			params->rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
+		}
 		params->rsaDetail.scheme.scheme = TPM_ALG_NULL;
-		if (restricted) {
+		if (type == KEY_TYPE_AK) {
 			params->rsaDetail.scheme.scheme = TPM_ALG_RSASSA;
 			params->rsaDetail.scheme.details.rsassa.hashAlg = halg;
 		}
@@ -201,17 +208,26 @@ static int asymPublicTemplate(TPMT_PUBLIC *publicArea,
 		params->rsaDetail.exponent = 0;
 		publicArea->unique.rsa.t.size = 0;
 	} else {
-		params->eccDetail.symmetric.algorithm = TPM_ALG_NULL;
+		if (type == KEY_TYPE_PRIMARY) {
+			params->eccDetail.symmetric.algorithm = TPM_ALG_AES;
+			params->eccDetail.symmetric.keyBits.aes = 128;
+			params->eccDetail.symmetric.mode.aes = TPM_ALG_CFB;
+		} else {
+			params->eccDetail.symmetric.algorithm = TPM_ALG_NULL;
+		}
 		params->eccDetail.scheme.scheme = TPM_ALG_NULL;
 		params->eccDetail.curveID = curveID;
 		params->eccDetail.kdf.scheme = TPM_ALG_NULL;
-
-		if (restricted) {
+		if (type == KEY_TYPE_AK) {
 			params->eccDetail.scheme.scheme = TPM_ALG_ECDSA;
 			params->eccDetail.scheme.details.ecdsa.hashAlg = halg;
 			params->eccDetail.curveID = curveID;
 			params->eccDetail.kdf.scheme = TPM_ALG_NULL;
 			params->eccDetail.kdf.details.mgf1.hashAlg = halg;
+		} else if (type == KEY_TYPE_PRIMARY) {
+			params->eccDetail.scheme.details.anySig.hashAlg = 0;
+			params->eccDetail.curveID = TPM_ECC_NIST_P256;
+			params->eccDetail.kdf.details.mgf1.hashAlg = 0;
 		}
 
 		publicArea->unique.ecc.x.t.size = 0;
@@ -261,7 +277,7 @@ static int blPublicTemplate(TPMT_PUBLIC *publicArea, TPMI_ALG_HASH nalg,
 /**
  * Create TPM key or sealed data blob
  * @param[in] tssContext	TSS context
- * @param[in] algPublic		EK algorithm
+ * @param[in] algPublic		Public key algorithm
  * @param[in] curveID		Elliptic Curve identifier
  * @param[in] nalg		Object name algorithm
  * @param[in] halg		Hash algorithm
@@ -271,6 +287,7 @@ static int blPublicTemplate(TPMT_PUBLIC *publicArea, TPMI_ALG_HASH nalg,
  * @param[in,out] private	New key private part
  * @param[in,out] public_len	New key public part length
  * @param[in,out] public	New key public part
+ * @param[in,out] keyHandle	New key handle (primary)
  *
  * @returns 0 on success, a negative value on error
  */
@@ -278,10 +295,14 @@ int attest_tss_create_obj(TSS_CONTEXT *tssContext, TPMI_ALG_PUBLIC algPublic,
 			  TPMI_ECC_CURVE curveID, TPMI_ALG_HASH nalg,
 			  TPMI_ALG_HASH halg, enum key_types type,
 			  BYTE *policy_digest, UINT16 *private_len,
-			  BYTE **private, UINT16 *public_len, BYTE **public)
+			  BYTE **private, UINT16 *public_len, BYTE **public,
+			  TPMI_DH_OBJECT *keyHandle)
 {
 	Create_In in;
-	Create_Out out;
+	union {
+		Create_Out create;
+		CreatePrimary_Out createprimary;
+	} out_common;
 	int rc;
 
 	in.parentHandle = 0x81000001;
@@ -292,11 +313,12 @@ int attest_tss_create_obj(TSS_CONTEXT *tssContext, TPMI_ALG_PUBLIC algPublic,
 
 	memset(&in.inPublic.publicArea, 0, sizeof(in.inPublic.publicArea));
 	switch (type) {
+	case KEY_TYPE_PRIMARY:
+		in.parentHandle = TPM_RH_OWNER;
 	case KEY_TYPE_AK:
 	case KEY_TYPE_ASYM_DEC:
 		rc = asymPublicTemplate(&in.inPublic.publicArea, algPublic,
-					TPM_ECC_NONE, nalg, halg,
-					(type == KEY_TYPE_AK), NULL);
+					TPM_ECC_NONE, nalg, halg, type, NULL);
 		break;
 	case KEY_TYPE_SYM_HMAC:
 		rc = blPublicTemplate(&in.inPublic.publicArea, nalg, NULL);
@@ -319,24 +341,32 @@ int attest_tss_create_obj(TSS_CONTEXT *tssContext, TPMI_ALG_PUBLIC algPublic,
 			return -EINVAL;
 	}
 
-	rc = TSS_Execute(tssContext, (RESPONSE_PARAMETERS *)&out,
-			 (COMMAND_PARAMETERS *)&in, NULL, TPM_CC_Create,
-			 TPM_RS_PW, NULL, 0, TPM_RH_NULL, NULL, 0);
+	rc = TSS_Execute(tssContext, (RESPONSE_PARAMETERS *)&out_common,
+			 (COMMAND_PARAMETERS *)&in, NULL,
+			 (type == KEY_TYPE_PRIMARY) ? TPM_CC_CreatePrimary :
+			 TPM_CC_Create, TPM_RS_PW, NULL, 0, TPM_RH_NULL, NULL, 0);
 	if (rc) {
 		tss_print_error("TPM_CC_Create", rc);
 		return -EINVAL;
 	}
 
+	if (type == KEY_TYPE_PRIMARY) {
+		*keyHandle = ((CreatePrimary_Out *)&out_common)->objectHandle;
+		return rc;
+	}
+
 	*private = NULL;
 	*private_len = 0;
-	rc = TSS_Structure_Marshal(private, private_len, &out.outPrivate,
+	rc = TSS_Structure_Marshal(private, private_len,
+				&out_common.create.outPrivate,
 				(MarshalFunction_t)TSS_TPM2B_PRIVATE_Marshal);
 	if (rc)
 		return -ENOMEM;
 
 	*public = NULL;
 	*public_len = 0;
-	rc = TSS_Structure_Marshal(public, public_len, &out.outPublic,
+	rc = TSS_Structure_Marshal(public, public_len,
+				&out_common.create.outPublic,
 				(MarshalFunction_t)TSS_TPM2B_PUBLIC_Marshal);
 	if (rc)
 		free(*private);
@@ -982,5 +1012,58 @@ int attest_tss_quote(TSS_CONTEXT *tssContext, TPM_HANDLE ak_handle,
 	}
 
 	return rc;
+}
+
+/**
+ * Check if key is present
+ * @param[in] tssContext	TSS context
+ * @param[in] keyHandle		Key handle
+ *
+ * @returns 0 on success, a negative value on error
+ */
+int attest_tss_check_key(TSS_CONTEXT *tssContext, TPM_HANDLE keyHandle)
+{
+	ReadPublic_In in;
+	ReadPublic_Out out;
+	int rc;
+
+	in.objectHandle = keyHandle;
+
+	rc = TSS_Execute(tssContext, (RESPONSE_PARAMETERS *)&out,
+			 (COMMAND_PARAMETERS *)&in, NULL, TPM_CC_ReadPublic,
+			 TPM_RH_NULL, NULL, 0);
+	if (rc)
+		return -ENOENT;
+
+	return 0;
+}
+
+/**
+ * Make primary key as permanent
+ * @param[in] tssContext	TSS context
+ * @param[in] objectHandle	Object handle
+ * @param[in] persistentHandle	Persistent handle
+ *
+ * @returns 0 on success, a negative value on error
+ */
+int attest_tss_evictcontrol(TSS_CONTEXT *tssContext, TPM_HANDLE objectHandle,
+			    TPM_HANDLE persistentHandle)
+{
+	EvictControl_In in;
+	int rc;
+
+	in.auth = TPM_RH_OWNER;
+	in.objectHandle = objectHandle;
+        in.persistentHandle = persistentHandle;
+
+	rc = TSS_Execute(tssContext, NULL, (COMMAND_PARAMETERS *)&in, NULL,
+			 TPM_CC_EvictControl, TPM_RS_PW, NULL, 0,
+			 TPM_RH_NULL, NULL, 0);
+	if (rc) {
+		tss_print_error("TPM_CC_EvictControl", rc);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 /** @}*/

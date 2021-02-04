@@ -207,6 +207,7 @@ int attest_enroll_add_key(attest_ctx_data *d_ctx, TSS_CONTEXT *tssContext,
 	BYTE *private, *public;
 	TPMT_HA calculated_digest = { 0 };
 	BYTE *policy_digest = NULL;
+	TPM_HANDLE primaryHandle;
 	int rc;
 
 	if (policy_bin_len) {
@@ -226,9 +227,26 @@ int attest_enroll_add_key(attest_ctx_data *d_ctx, TSS_CONTEXT *tssContext,
 		policy_digest = (uint8_t *)&calculated_digest.digest;
 	}
 
+	rc = attest_tss_check_key(tssContext, 0x81000001);
+	if (rc == -ENOENT) {
+		rc = attest_tss_create_obj(tssContext, TPM_ALG_RSA,
+				   TPM_ECC_NONE, nalg, halg, KEY_TYPE_PRIMARY,
+				   NULL, 0, NULL, 0, NULL, &primaryHandle);
+		if (rc < 0)
+			return rc;
+
+		rc = attest_tss_evictcontrol(tssContext, primaryHandle,
+					     0x81000001);
+
+		attest_tss_flushcontext(tssContext, primaryHandle);
+
+		if (rc < 0)
+			return rc;
+	}
+
 	rc = attest_tss_create_obj(tssContext, TPM_ALG_RSA, TPM_ECC_NONE, nalg,
 				   halg, type, policy_digest, &private_len,
-				   &private, &public_len, &public);
+				   &private, &public_len, &public, NULL);
 	if (rc)
 		return rc;
 

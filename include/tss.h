@@ -23,7 +23,7 @@
 #include <ibmtss/tssresponsecode.h>
 
 enum key_types { KEY_TYPE_AK, KEY_TYPE_ASYM_DEC, KEY_TYPE_SYM_HMAC,
-		 KEY_TYPE__LAST };
+		 KEY_TYPE_PRIMARY, KEY_TYPE__LAST };
 
 int attest_tss_nvreadpublic(TSS_CONTEXT *tssContext, int nvIndex,
 			    size_t *nvdata_len);
@@ -35,7 +35,8 @@ int attest_tss_create_obj(TSS_CONTEXT *tssContext, TPMI_ALG_PUBLIC algPublic,
 			  TPMI_ECC_CURVE curveID, TPMI_ALG_HASH nalg,
 			  TPMI_ALG_HASH halg, enum key_types type,
 			  BYTE *policy_digest, UINT16 *private_len,
-			  BYTE **private, UINT16 *public_len, BYTE **public);
+			  BYTE **private, UINT16 *public_len, BYTE **public,
+			  TPMI_DH_OBJECT *keyHandle);
 int attest_tss_createek(TSS_CONTEXT *tssContext, TPMI_ALG_PUBLIC algPublic,
 			TPM_HANDLE *keyHandle);
 int attest_tss_load(TSS_CONTEXT *tssContext, UINT16 private_len, BYTE *private,
@@ -73,5 +74,8 @@ int attest_tss_quote(TSS_CONTEXT *tssContext, TPM_HANDLE ak_handle,
 		     const BYTE *nonce, const TPML_PCR_SELECTION *pcrSelection,
 		     UINT16 *quote_len, BYTE **quote, UINT16 *signature_len,
 		     BYTE **signature);
+int attest_tss_check_key(TSS_CONTEXT *tssContext, TPM_HANDLE keyHandle);
+int attest_tss_evictcontrol(TSS_CONTEXT *tssContext, TPM_HANDLE objectHandle,
+			    TPM_HANDLE persistentHandle);
 
 #endif /*_TSS_H*/
