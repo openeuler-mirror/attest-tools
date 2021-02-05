@@ -112,6 +112,8 @@ int attest_ctx_data_add_copy(attest_ctx_data *ctx, enum ctx_fields field,
 			     const char *label);
 int attest_ctx_data_add_file(attest_ctx_data *ctx, enum ctx_fields field,
 			     char *path, const char *label);
+int attest_ctx_data_add_dir(attest_ctx_data *ctx, enum ctx_fields field,
+			    char *dir_path, const char *label);
 int attest_ctx_data_add_string(attest_ctx_data *ctx, enum ctx_fields field,
 			     const char *string, const char *label);
 int attest_ctx_data_new_string(enum data_formats fmt, size_t data_len,

@@ -39,6 +39,8 @@ make %{?_smp_mflags}
 %install
 rm -rf $RPM_BUILD_ROOT
 %make_install %{?_smp_mflags}
+install -m 755 -d $RPM_BUILD_ROOT/etc/attest-tools/ek_ca_certs
+install -m 755 -d $RPM_BUILD_ROOT/etc/attest-tools/privacy_ca_certs
 
 %post
 ldconfig
@@ -51,6 +53,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
+%dir %{_sysconfdir}/%{name}
+%dir %{_sysconfdir}/%{name}/ek_ca_certs
+%dir %{_sysconfdir}/%{name}/privacy_ca_certs
 %{_libdir}/libenroll_client.so
 %{_libdir}/libverifier_ima_policy.so
 %{_libdir}/libskae.so

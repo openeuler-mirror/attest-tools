@@ -45,6 +45,8 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <limits.h>
 
 #include <sys/mman.h>
 
@@ -293,6 +295,45 @@ int attest_ctx_data_add_file(attest_ctx_data *ctx, enum ctx_fields field,
 			     char *path, const char *label)
 {
 	return attest_ctx_data_add_common(ctx, field, path, 0, NULL, label);
+}
+
+/**
+ * Add directory to data context
+ * @param[in] ctx	data context
+ * @param[in] field	field identifier
+ * @param[in] dir_path	directory path
+ * @param[in] label	data label
+ *
+ * @returns 0 on success, a negative value on error
+ */
+int attest_ctx_data_add_dir(attest_ctx_data *ctx, enum ctx_fields field,
+			    char *dir_path, const char *label)
+{
+	char file_path[PATH_MAX];
+	struct dirent *d_entry;
+	DIR *dir;
+	int rc;
+
+	dir = opendir(dir_path);
+	if (!dir)
+		return -EACCES;
+
+	while ((d_entry = readdir(dir))) {
+		if (!strcmp(d_entry->d_name, ".") ||
+		    !strcmp(d_entry->d_name, ".."))
+                        continue;
+
+		snprintf(file_path, sizeof(file_path), "%s/%s", dir_path,
+			 d_entry->d_name);
+
+		rc = attest_ctx_data_add_common(ctx, field, file_path, 0, NULL,
+						label);
+		if (rc)
+			break;
+	}
+
+	closedir(dir);
+	return 0;
 }
 
 /**

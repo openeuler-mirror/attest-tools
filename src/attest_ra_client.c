@@ -29,6 +29,7 @@
 
 #include "enroll_client.h"
 #include "util.h"
+#include "conf.h"
 
 #define SERVER_HOSTNAME "test-server"
 #define SERVER_PORT "3000"
@@ -241,7 +242,7 @@ int main(int argc, char **argv)
 
 	switch (type) {
 	case REQUEST_AK_CERT:
-		rc = attest_enroll_msg_ak_challenge_request("list",
+		rc = attest_enroll_msg_ak_challenge_request(EK_CA_DIR,
 							    &message_in);
 		if (rc < 0)
 			break;
@@ -331,7 +332,7 @@ int main(int argc, char **argv)
 		free(message_out);
 		message_out = NULL;
 
-		rc = attest_enroll_msg_quote_request("list_privacy_ca",
+		rc = attest_enroll_msg_quote_request(PRIVACY_CA_DIR,
 						kernel_bios_log, kernel_ima_log,
 						pcr_alg_name, pcr_list_str,
 						skip_sig_ver,

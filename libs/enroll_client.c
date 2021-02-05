@@ -48,6 +48,7 @@
 #include "util.h"
 #include "tss.h"
 #include "skae.h"
+#include "conf.h"
 #include "event_log.h"
 
 #include <openssl/rsa.h>
@@ -259,9 +260,9 @@ int attest_enroll_add_key(attest_ctx_data *d_ctx, TSS_CONTEXT *tssContext,
 		goto out;
 
 	if (type == KEY_TYPE_ASYM_DEC) {
-		rc = openssl_write_tpmfile("tpm_key.pem", public, public_len,
-					   private, private_len, policy_bin,
-					   policy_bin_len);
+		rc = openssl_write_tpmfile(OPENSSL_TPM2_KEY_PATH, public,
+					   public_len, private, private_len,
+					   policy_bin, policy_bin_len);
 		if (rc < 0)
 			goto out;
 	}
@@ -362,34 +363,6 @@ out_munmap_priv:
 out_flush_ek:
 	attest_tss_flushcontext(tssContext, activateHandle);
 	return rc;
-}
-
-static int save_certs(attest_ctx_data *d_ctx, enum ctx_fields cert,
-		      enum ctx_fields ca_cert)
-{
-	struct data_item *item;
-	char filename[NAME_MAX + 1];
-	enum ctx_fields fields[2] = { cert, ca_cert };
-	int rc = 0, i;
-
-	for (i = 0; i < 2; i++) {
-		item = attest_ctx_data_get(d_ctx, fields[i]);
-		if (!item) {
-			printf("Item %s not found\n",
-			       attest_ctx_data_get_field(i));
-			return -ENOENT;
-		}
-
-
-		snprintf(filename, sizeof(filename), "%s.pem",
-			 attest_ctx_data_get_field(fields[i]));
-
-		rc = attest_util_write_file(filename, item->len, item->data, 0);
-		if (rc < 0)
-			return rc;
-	}
-
-	return 0;
 }
 
 #define SECURITYFS_PATH "/sys/kernel/security/"
@@ -804,7 +777,7 @@ static int write_trusted_key_blob(char *path, int append)
 
 	_bin2hex(hex_data, bin_data, bin_data_len);
 
-	rc = attest_util_write_file("trusted_key.blob", bin_data_len * 2,
+	rc = attest_util_write_file(SYM_KEY_BLOB, bin_data_len * 2,
 				    (uint8_t *)hex_data, append);
 	free(hex_data);
 out:
@@ -830,7 +803,6 @@ int attest_enroll_create_sym_key(int kernel_bios_log, int kernel_ima_log,
 	UINT16 policy_bin_len = 0;
 	BYTE *policy_bin = NULL;
 	struct data_item *policy_item;
-	char filename[NAME_MAX + 1];
 	int pcr_list[IMPLEMENTATION_PCR];
 	TPM_ALG_ID pcr_alg = PCR_ALG;
 	int rc, i;
@@ -874,20 +846,20 @@ int attest_enroll_create_sym_key(int kernel_bios_log, int kernel_ima_log,
 
 	attest_pcr_cleanup(v_ctx);
 
-	rc = attest_enroll_add_key(d_ctx, tssContext, "sym_hmac_priv.bin",
-				   "sym_hmac_pub.bin", KEY_TYPE_SYM_HMAC,
+	rc = attest_enroll_add_key(d_ctx, tssContext, SYM_KEY_PRIV_PATH,
+				   SYM_KEY_PUB_PATH, KEY_TYPE_SYM_HMAC,
 				   NAME_ALG_KEY, HASH_ALG_KEY, policy_bin_len,
 				   policy_bin);
 	if (rc < 0)
 		goto out;
 
-	rc = write_trusted_key_blob("sym_hmac_priv.bin", 0);
+	rc = write_trusted_key_blob(SYM_KEY_PRIV_PATH, 0);
 	if (rc < 0)
 		goto out;
 
-	rc = write_trusted_key_blob("sym_hmac_pub.bin", 1);
+	rc = write_trusted_key_blob(SYM_KEY_PUB_PATH, 1);
 	if (rc < 0)
-		unlink("sym_hmac_priv.bin");
+		unlink(SYM_KEY_PRIV_PATH);
 
 	policy_item = attest_ctx_data_get(d_ctx, CTX_SYM_KEY_POLICY);
 	if (!policy_item) {
@@ -897,10 +869,7 @@ int attest_enroll_create_sym_key(int kernel_bios_log, int kernel_ima_log,
 		goto out;
 	}
 
-	snprintf(filename, sizeof(filename), "%s.pem",
-		 attest_ctx_data_get_field(CTX_SYM_KEY_POLICY));
-
-	rc = attest_util_write_file(filename, policy_item->len,
+	rc = attest_util_write_file(SYM_KEY_POLICY_PATH, policy_item->len,
 				    policy_item->data, 0);
 out:
 	TSS_Delete(tssContext);
@@ -935,7 +904,7 @@ int attest_enroll_generate_ak(void)
 	if (rc)
 		return -EINVAL;
 
-	rc = attest_enroll_add_key(d_ctx, tssContext, "akpriv.bin", "akpub.bin",
+	rc = attest_enroll_add_key(d_ctx, tssContext, AK_PRIV_PATH, AK_PUB_PATH,
 				   KEY_TYPE_AK, NAME_ALG_AK, HASH_ALG_AK, 0,
 				   NULL);
 
@@ -951,19 +920,16 @@ int attest_enroll_generate_ak(void)
 
 /**
  * Create an AK challenge request
- * @param[in] certListPath	list of CA certificates to verify EK credential
+ * @param[in] ek_ca_dir	Directory containing EK CA certificates
  * @param[in,out] message_out	AK challenge request to be sent to RA server
  *
  * @returns 0 on success, a negative value on error
  */
-int attest_enroll_msg_ak_challenge_request(char *certListPath,
+int attest_enroll_msg_ak_challenge_request(char *ek_ca_dir,
 					   char **message_out)
 {
 	attest_ctx_data *d_ctx = NULL;
-	char *certPath;
 	void *tssContext;
-	size_t size;
-	unsigned char *data, *data_ptr;
 #ifdef DEBUG
 	char *message_out_stripped;
 #endif
@@ -972,34 +938,24 @@ int attest_enroll_msg_ak_challenge_request(char *certListPath,
 	attest_ctx_data_init(&d_ctx);
 
 	rc = TSS_Create((TSS_CONTEXT **)&tssContext);
-	if (rc)
-		return -EINVAL;
+	if (rc) {
+		rc = -EINVAL;
+		goto out;
+	}
 
 	rc = attest_enroll_add_ek_cert(d_ctx, tssContext);
 	if (rc)
-		goto out;
+		goto out_tss;
 
-	rc = attest_util_read_file(certListPath, &size, &data);
+	rc = attest_ctx_data_add_dir(d_ctx, CTX_EK_CA_CERT, ek_ca_dir, NULL);
 	if (rc < 0)
-		goto out;
+		goto out_tss;
 
-	data_ptr = data;
-
-	while ((certPath = strsep((char **)&data_ptr, "\n"))) {
-		if (!strlen(certPath))
-			continue;
-
-		rc = attest_ctx_data_add_file(d_ctx, CTX_EK_CA_CERT, certPath,
-					      NULL);
-		if (rc < 0)
-			goto out_munmap;
-	}
-
-	rc = attest_enroll_add_key(d_ctx, tssContext, "akpriv.bin", "akpub.bin",
+	rc = attest_enroll_add_key(d_ctx, tssContext, AK_PRIV_PATH, AK_PUB_PATH,
 				   KEY_TYPE_AK, NAME_ALG_AK, HASH_ALG_AK, 0,
 				   NULL);
 	if (rc)
-		goto out_munmap;
+		goto out_tss;
 
 	rc = attest_ctx_data_print_json(d_ctx, message_out);
 #ifdef DEBUG
@@ -1007,11 +963,10 @@ int attest_enroll_msg_ak_challenge_request(char *certListPath,
 	printf("-> %s\n", message_out_stripped);
 	free(message_out_stripped);
 #endif
-out_munmap:
-	munmap(data, size);
+out_tss:
+	TSS_Delete(tssContext);
 out:
 	attest_ctx_data_cleanup(d_ctx);
-	TSS_Delete(tssContext);
 	return rc;
 }
 
@@ -1050,8 +1005,8 @@ int attest_enroll_msg_ak_cert_request(char *message_in, char* hostname,
 	printf("<- %s\n", message_in_stripped);
 	free(message_in_stripped);
 #endif
-	rc = attest_enroll_add_cred(d_ctx, d_ctx_cred, tssContext, "akpriv.bin",
-				    "akpub.bin");
+	rc = attest_enroll_add_cred(d_ctx, d_ctx_cred, tssContext, AK_PRIV_PATH,
+				    AK_PUB_PATH);
 	if (rc < 0)
 		goto out;
 
@@ -1087,6 +1042,7 @@ int attest_enroll_msg_ak_cert_response(char *message_in)
 	char *message_in_stripped;
 #endif
 	attest_ctx_data *d_ctx = NULL;
+	struct data_item *item;
 	int rc;
 
 	attest_ctx_data_init(&d_ctx);
@@ -1100,7 +1056,21 @@ int attest_enroll_msg_ak_cert_response(char *message_in)
 	printf("<- %s\n", message_in_stripped);
 	free(message_in_stripped);
 #endif
-	save_certs(d_ctx, CTX_AIK_CERT, CTX_PRIVACY_CA_CERT);
+	item = attest_ctx_data_get(d_ctx, CTX_AIK_CERT);
+	if (item) {
+		rc = attest_util_write_file(AK_CERT_PATH,
+					    item->len, item->data, 0);
+		if (rc < 0)
+			goto out;
+	}
+
+	item = attest_ctx_data_get(d_ctx, CTX_PRIVACY_CA_CERT);
+	if (item) {
+		rc = attest_util_write_file(PRIVACY_CA_CERT_PATH,
+					    item->len, item->data, 0);
+		if (rc < 0)
+			goto out;
+	}
 out:
 	attest_ctx_data_cleanup(d_ctx);
 
@@ -1133,7 +1103,6 @@ int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 #endif
 	UINT16 certify_info_len, signature_len, policy_bin_len = 0;
 	BYTE *certify_info = NULL, *signature = NULL, *policy_bin = NULL;
-	char filename[NAME_MAX + 1];
 	int pcr_list[IMPLEMENTATION_PCR];
 	TPM_ALG_ID pcr_alg = PCR_ALG;
 	int rc, i;
@@ -1178,38 +1147,31 @@ int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 
 	attest_pcr_cleanup(v_ctx);
 
-	rc = attest_enroll_add_key(d_ctx, tssContext, "keypriv.bin",
-				   "keypub.bin", KEY_TYPE_ASYM_DEC,
+	rc = attest_enroll_add_key(d_ctx, tssContext, TLS_KEY_PRIV_PATH,
+				   TLS_KEY_PUB_PATH, KEY_TYPE_ASYM_DEC,
 				   NAME_ALG_KEY, HASH_ALG_KEY, policy_bin_len,
 				   policy_bin);
 	if (rc < 0)
 		goto out;
 
-	snprintf(filename, sizeof(filename), "%s.pem",
-		 attest_ctx_data_get_field(CTX_PRIVACY_CA_CERT));
-
-	rc = attest_ctx_data_add_file(d_ctx, CTX_PRIVACY_CA_CERT, filename,
-				      NULL);
+	rc = attest_ctx_data_add_file(d_ctx, CTX_PRIVACY_CA_CERT,
+				      PRIVACY_CA_CERT_PATH, NULL);
 	if (rc < 0)
 		goto out;
 
-	snprintf(filename, sizeof(filename), "%s.pem",
-		 attest_ctx_data_get_field(CTX_AIK_CERT));
-
-	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, filename, NULL);
+	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, AK_CERT_PATH, NULL);
 	if (rc < 0)
 		goto out;
-
-	snprintf(filename, sizeof(filename), "%s.pem",
-		 attest_ctx_data_get_field(CTX_SYM_KEY_POLICY));
 
 	/* this will be used to verify the symmetric key for EVM, if present */
-	attest_ctx_data_add_file(d_ctx, CTX_SYM_KEY_POLICY, filename, NULL);
+	attest_ctx_data_add_file(d_ctx, CTX_SYM_KEY_POLICY, SYM_KEY_POLICY_PATH,
+				 NULL);
 
-	rc = attest_tss_load_certify(tssContext, "akpriv.bin", "akpub.bin",
-				     "keypriv.bin", "keypub.bin", TPM_ALG_RSA,
-				     HASH_ALG_AK, &certify_info_len,
-				     &certify_info, &signature_len, &signature);
+	rc = attest_tss_load_certify(tssContext, AK_PRIV_PATH, AK_PUB_PATH,
+				     TLS_KEY_PRIV_PATH, TLS_KEY_PUB_PATH,
+				     TPM_ALG_RSA, HASH_ALG_AK,
+				     &certify_info_len, &certify_info,
+				     &signature_len, &signature);
 	if (rc < 0)
 		goto out;
 
@@ -1222,7 +1184,7 @@ int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 			goto out;
 	}
 
-	rc = attest_enroll_add_csr("tpm_key.pem", csr_subject_entries, d_ctx,
+	rc = attest_enroll_add_csr(OPENSSL_TPM2_KEY_PATH, csr_subject_entries, d_ctx,
 				   certify_info_len, certify_info,
 				   signature_len, signature);
 	if (rc < 0)
@@ -1263,6 +1225,7 @@ int attest_enroll_msg_key_cert_response(char *message_in)
 	char *message_in_stripped;
 #endif
 	attest_ctx_data *d_ctx = NULL;
+	struct data_item *item;
 	int rc;
 
 	attest_ctx_data_init(&d_ctx);
@@ -1276,7 +1239,21 @@ int attest_enroll_msg_key_cert_response(char *message_in)
 	printf("<- %s\n", message_in_stripped);
 	free(message_in_stripped);
 #endif
-	save_certs(d_ctx, CTX_KEY_CERT, CTX_CA_CERT);
+	item = attest_ctx_data_get(d_ctx, CTX_KEY_CERT);
+	if (item) {
+		rc = attest_util_write_file(TLS_KEY_CERT_PATH,
+					    item->len, item->data, 0);
+		if (rc < 0)
+			goto out;
+	}
+
+	item = attest_ctx_data_get(d_ctx, CTX_CA_CERT);
+	if (item) {
+		rc = attest_util_write_file(TLS_KEY_CA_CERT_PATH,
+					    item->len, item->data, 0);
+		if (rc < 0)
+			goto out;
+	}
 out:
 	attest_ctx_data_cleanup(d_ctx);
 
@@ -1301,8 +1278,7 @@ int attest_enroll_msg_quote_nonce_request(char **message_out)
 	attest_ctx_data_init(&d_ctx);
 	attest_ctx_verifier_init(&v_ctx);
 
-	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, "aik_cert.pem",
-				      NULL);
+	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, AK_CERT_PATH, NULL);
 	if (rc < 0)
 		goto out;
 
@@ -1320,7 +1296,7 @@ out:
 
 /**
  * Parse a quote nonce response
- * @param[in] certListPath	List of Privacy CA certificates
+ * @param[in] privacy_ca_dir	Directory containing Privacy CA certificates
  * @param[in] kernel_bios_log	take or not the current BIOS event log
  * @param[in] kernel_ima_log	take or not the current IMA event log
  * @param[in] pcr_alg_name	Selected PCR bank
@@ -1332,7 +1308,7 @@ out:
  *
  * @returns 0 on success, a negative value on error
  */
-int attest_enroll_msg_quote_request(char *certListPath, int kernel_bios_log,
+int attest_enroll_msg_quote_request(char *privacy_ca_dir, int kernel_bios_log,
 				    int kernel_ima_log, char *pcr_alg_name,
 				    char *pcr_list_str, int skip_sig_ver,
 				    int send_unsigned_files, char *message_in,
@@ -1343,9 +1319,7 @@ int attest_enroll_msg_quote_request(char *certListPath, int kernel_bios_log,
 	char *message_out_stripped;
 #endif
 	void *tssContext;
-	size_t size;
-	char *certPath;
-	uint8_t *data, *data_ptr, *nonce;
+	uint8_t *nonce;
 	attest_ctx_data *d_ctx;
 	attest_ctx_verifier *v_ctx;
 	int pcr_list[IMPLEMENTATION_PCR];
@@ -1374,34 +1348,16 @@ int attest_enroll_msg_quote_request(char *certListPath, int kernel_bios_log,
 	if (rc < 0)
 		goto out;
 
-	rc = attest_util_read_file(certListPath, &size, &data);
+	rc = attest_ctx_data_add_dir(d_ctx, CTX_PRIVACY_CA_CERT, privacy_ca_dir,
+				     NULL);
 	if (rc < 0)
 		goto out;
 
-	data_ptr = data;
-
-	while ((certPath = strsep((char **)&data_ptr, "\n"))) {
-		if (!strlen(certPath))
-			continue;
-
-		rc = attest_ctx_data_add_file(d_ctx,
-						CTX_PRIVACY_CA_CERT,
-						certPath, NULL);
-		if (rc < 0)
-			break;
-	}
-
-	munmap(data, size);
-
+	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, AK_CERT_PATH, NULL);
 	if (rc < 0)
 		goto out;
 
-	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT,
-					"aik_cert.pem", NULL);
-	if (rc < 0)
-		goto out;
-
-	attest_ctx_data_add_file(d_ctx, CTX_SYM_KEY_POLICY, "sym_policy.pem",
+	attest_ctx_data_add_file(d_ctx, CTX_SYM_KEY_POLICY, SYM_KEY_POLICY_PATH,
 				 NULL);
 
 	rc = TSS_Create((TSS_CONTEXT **)&tssContext);
@@ -1434,8 +1390,8 @@ int attest_enroll_msg_quote_request(char *certListPath, int kernel_bios_log,
 							1 << (pcr_list[i] % 8);
 	}
 
-	rc = attest_enroll_add_quote(d_ctx, tssContext, "akpriv.bin",
-				     "akpub.bin", nonce_len, nonce, &selection);
+	rc = attest_enroll_add_quote(d_ctx, tssContext, AK_PRIV_PATH,
+				     AK_PUB_PATH, nonce_len, nonce, &selection);
 	if (rc < 0)
 		goto out;
 
