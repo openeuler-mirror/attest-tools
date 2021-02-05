@@ -477,6 +477,69 @@ out:
 	return rc;
 }
 
+static int attest_enroll_merge_subject(char *reqPath, char *caCertPath,
+				       int buf_len, char *buf)
+{
+	X509_REQ *req = NULL;
+	X509 *issuer_cert = NULL;
+	X509_NAME *issuer_name = NULL, *req_name = NULL;
+	FILE *fp = NULL;
+	int rc, i, lastpos = -1;
+
+	fp = fopen(reqPath, "r");
+	if (!fp)
+	return -EACCES;
+
+	req = PEM_read_X509_REQ(fp, NULL, NULL, NULL);
+	if (!req)
+		goto out;
+
+	fclose(fp);
+
+	fp = fopen(caCertPath, "r");
+	if (!fp) {
+		rc = -EACCES;
+		goto out;
+	}
+
+	issuer_cert = PEM_read_X509(fp, NULL, NULL, NULL);
+	if (!issuer_cert)
+		goto out;
+
+	issuer_name = X509_get_subject_name(issuer_cert);
+	req_name =  X509_REQ_get_subject_name(req);
+
+	for (i = 0; i < 5; i++) {
+		int idx_issuer, idx_req;
+		X509_NAME_ENTRY *entry;
+
+		idx_issuer = X509_NAME_get_index_by_NID(issuer_name,
+						OBJ_txt2nid(name_fields[i]),
+						lastpos);
+		idx_req = X509_NAME_get_index_by_NID(req_name,
+					     OBJ_txt2nid(name_fields[i]),
+					     lastpos);
+
+		if (idx_issuer == -1 || idx_req == -1)
+			continue;
+
+		entry = X509_NAME_delete_entry(req_name, idx_req);
+		X509_NAME_ENTRY_free(entry);
+
+		entry = X509_NAME_get_entry(issuer_name, idx_issuer);
+		X509_NAME_add_entry(req_name, entry, idx_req, 0);
+	}
+
+	X509_NAME_oneline(req_name, buf, buf_len);
+out:
+	if (fp)
+		fclose(fp);
+
+	X509_REQ_free(req);
+	X509_free(issuer_cert);
+	return rc;
+}
+
 /**
  * Sign a CSR
  * @param[in] caKeyPath	CA private key path
@@ -494,6 +557,7 @@ int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
 	char path_csr[PATH_MAX];
 	char path_cert[PATH_MAX];
 	char pass_arg[64];
+	char subj_arg[128];
 	size_t len;
 	int rc = -EINVAL, status;
 
@@ -510,11 +574,13 @@ int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
 	if (rc < 0)
 		return rc;
 
+	attest_enroll_merge_subject(path_csr, caCertPath, sizeof(subj_arg), subj_arg);
+
 	if (!fork())
 		return execlp("openssl", "openssl", "ca", "-cert", caCertPath,
 			      "-keyfile", caKeyPath, "-passin", pass_arg,
 			      "-in", path_csr, "-out", path_cert, "-batch",
-			      NULL);
+			      "-subj", subj_arg, NULL);
 
 	wait(&status);
 
