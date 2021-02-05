@@ -545,13 +545,15 @@ out:
  * @param[in] caKeyPath	CA private key path
  * @param[in] caKeyPassword	CA private key password
  * @param[in] caCertPath	CA certificate path
+ * @param[in] openssl_ca_section	openssl CA section to use
  * @param[in] csr_str	CSR to sign
  * @param[in,out] cert_str	Signed certificate
  *
  * @returns 0 on success, a negative value on error
  */
 int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
-			   char *caCertPath, char *csr_str, char **cert_str)
+			   char *caCertPath, char *openssl_ca_section,
+			   char *csr_str, char **cert_str)
 {
 	attest_ctx_data *d_ctx_in = NULL;
 	char path_csr[PATH_MAX];
@@ -567,7 +569,7 @@ int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
 	snprintf(path_cert, sizeof(path_cert),
 		 "%s/cert.pem", d_ctx_in->data_dir);
 
-	snprintf(pass_arg, sizeof(pass_arg), "pass:%s", caKeyPassword);
+	snprintf(pass_arg, sizeof(pass_arg), "pass:%s", caKeyPassword ?: "");
 
 	rc = attest_util_write_file(path_csr, strlen(csr_str),
 				    (uint8_t *)csr_str, 0);
@@ -580,7 +582,8 @@ int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
 		return execlp("openssl", "openssl", "ca", "-cert", caCertPath,
 			      "-keyfile", caKeyPath, "-passin", pass_arg,
 			      "-in", path_csr, "-out", path_cert, "-batch",
-			      "-subj", subj_arg, NULL);
+			      "-subj", subj_arg, "-name", openssl_ca_section,
+			      NULL);
 
 	wait(&status);
 

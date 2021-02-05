@@ -54,8 +54,8 @@ int attest_enroll_msg_process_csr(int pcr_mask_len, uint8_t *pcr_mask,
 				  char *reqPath, uint16_t verifier_flags,
 				  char *message_in, char **csr_str);
 int attest_enroll_sign_csr(char *caKeyPath, char *caKeyPassword,
-			   char *caCertPath, char *csr_str,
-			   char **cert_str);
+			   char *caCertPath, char *openssl_ca_section,
+			   char *csr_str, char **cert_str);
 int attest_enroll_msg_return_cert(char *cert_str, char *ca_cert_str,
 				  char **message_out);
 int attest_enroll_msg_gen_quote_nonce(int hmac_key_len, uint8_t *hmac_key,
