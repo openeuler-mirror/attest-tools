@@ -53,7 +53,7 @@
 #include "ctx.h"
 #include "util.h"
 
-#define TEMP_DIR_TEMPLATE "attest-temp-dir-XXXXXX"
+#define TEMP_DIR_TEMPLATE "/tmp/attest-temp-dir-XXXXXX"
 #define TEMP_FILE_TEMPLATE "attest-temp-file-XXXXXX"
 
 #define MAX_DIGEST_SIZE 128
