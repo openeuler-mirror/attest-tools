@@ -1,1 +1,1 @@
-SUBDIRS = libs include verifiers src scripts
+SUBDIRS = libs include verifiers src scripts req_examples

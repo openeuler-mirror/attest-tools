@@ -56,6 +56,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/ek_ca_certs
 %dir %{_sysconfdir}/%{name}/privacy_ca_certs
+%{_sysconfdir}/%{name}/req_examples/*
 %{_libdir}/libenroll_client.so
 %{_libdir}/libverifier_ima_policy.so
 %{_libdir}/libskae.so

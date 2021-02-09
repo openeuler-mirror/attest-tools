@@ -1,0 +1,7 @@
+{
+  "reqs":{
+    "bios|verify":"always-true",
+    "ima_boot_aggregate|verify":"",
+    "ima_sig|verify":"subject_id:b25e7f66"
+  }
+}
