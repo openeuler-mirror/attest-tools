@@ -183,14 +183,8 @@ static int attest_event_log_parse_data(attest_ctx_data *d_ctx,
 					    &new_log->logs);
 		check_goto(rc, rc, out, v_ctx,
 			   "%s parser returned an error", item->label);
-
-		dlclose(handle);
-		handle = NULL;
 	}
 out:
-	if (handle)
-		dlclose(handle);
-
 	if (rc)
 		attest_event_log_free_event_logs(v_ctx);
 

@@ -977,7 +977,6 @@ void attest_ctx_verifier_cleanup(attest_ctx_verifier *ctx)
 		return;
 
 	list_for_each_entry_safe(v, temp_v, &ctx->verifiers, list) {
-		dlclose(v->handle);
 		list_del(&v->list);
 		free(v->req);
 		free(v);
