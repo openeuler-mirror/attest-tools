@@ -80,6 +80,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/attest_certify.sh
 %{_bindir}/ekcert_read.sh
 %{_bindir}/attest_parse_json
+%{_bindir}/get_pgp_keys.sh
 
 %files devel
 %{_prefix}/include/attest-tools

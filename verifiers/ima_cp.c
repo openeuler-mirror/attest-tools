@@ -16,15 +16,17 @@
 #include <string.h>
 #include <errno.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include "ctx.h"
 #include "util.h"
 #include "event_log/ima.h"
 
 #include <sys/mman.h>
+#include <sys/wait.h>
 
 #define IMA_CP_ID "ima_cp|verify"
-
+#define PGP_SCRIPT "/usr/bin/get_pgp_keys.sh"
 
 int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 {
@@ -49,7 +51,14 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 	if (!ima_log)
 		return -ENOENT;
 
+	if (fork() == 0)
+		return execlp(PGP_SCRIPT, PGP_SCRIPT, NULL);
+
+	wait(NULL);
+
 	dir = opendir("/etc/keys");
+	if (!dir)
+		return -EACCES;
 
 	while ((d_entry = readdir(dir))) {
 		if (!strcmp(d_entry->d_name, ".") ||
