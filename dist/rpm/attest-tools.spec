@@ -41,6 +41,9 @@ rm -rf $RPM_BUILD_ROOT
 %make_install %{?_smp_mflags}
 install -m 755 -d $RPM_BUILD_ROOT/etc/attest-tools/ek_ca_certs
 install -m 755 -d $RPM_BUILD_ROOT/etc/attest-tools/privacy_ca_certs
+install -m 755 -d $RPM_BUILD_ROOT/etc/sysconfig
+install -m 644 etc/attest_ra_server %{buildroot}/etc/sysconfig/attest_ra_server
+install -m 644 etc/attest_tls_server %{buildroot}/etc/sysconfig/attest_tls_server
 
 %post
 ldconfig
@@ -57,6 +60,10 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/%{name}/ek_ca_certs
 %dir %{_sysconfdir}/%{name}/privacy_ca_certs
 %{_sysconfdir}/%{name}/req_examples/*
+%config(noreplace) %{_sysconfdir}/sysconfig/attest_ra_server
+%config(noreplace) %{_sysconfdir}/sysconfig/attest_tls_server
+%{_unitdir}/attest_ra_server.service
+%{_unitdir}/attest_tls_server.service
 %{_libdir}/libenroll_client.so
 %{_libdir}/libverifier_ima_policy.so
 %{_libdir}/libskae.so

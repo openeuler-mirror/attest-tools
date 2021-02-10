@@ -1,1 +1,1 @@
-SUBDIRS = libs include verifiers src scripts req_examples
+SUBDIRS = libs include verifiers src scripts req_examples systemd

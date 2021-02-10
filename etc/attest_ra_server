@@ -1,0 +1,5 @@
+# Path of the file containing the requirements for the RA Server
+REQ_PATH="/etc/attest-tools/req_examples/req-bios-ima-sig.json"
+
+# List of PCRs that must be supplied by the RA Client to pass the verification
+PCR_LIST="0,1,2,3,4,5,6,7,8,9,11"
