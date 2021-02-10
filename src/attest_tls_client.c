@@ -114,6 +114,8 @@ int main(int argc, char **argv)
 	int server, option_index, c;
 	int rc = -EINVAL, engine = 0, verify_skae = 0, verbose = 0;
 
+	setvbuf(stdout, NULL, _IONBF, 1);
+
 	while (1) {
 		option_index = 0;
 		c = getopt_long(argc, argv, "k:c:d:s:a:ep:r:SVhv", long_options,

@@ -92,6 +92,8 @@ int main(int argc, char *argv[])
 	char *caCertPath = NULL, *caKeyPath, *caKeyPassword;
 	char *openssl_ca_section = NULL;
 
+	setvbuf(stdout, NULL, _IONBF, 1);
+
 	while (1) {
 		option_index = 0;
 		c = getopt_long(argc, argv, "p:r:isS:hv",

@@ -175,6 +175,8 @@ int main(int argc, char **argv)
 		hostname,
 		NULL};
 
+	setvbuf(stdout, NULL, _IONBF, 1);
+
 	while (1) {
 		option_index = 0;
 		c = getopt_long(argc, argv, "aAkyqSs:bip:P:r:uhv",
