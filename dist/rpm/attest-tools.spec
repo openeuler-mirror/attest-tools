@@ -89,6 +89,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/ekcert_read.sh
 %{_bindir}/attest_parse_json
 %{_bindir}/get_pgp_keys.sh
+%{_bindir}/generate_demoCA.sh
 
 %files devel
 %{_prefix}/include/attest-tools
