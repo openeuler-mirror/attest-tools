@@ -122,6 +122,7 @@ static struct option long_options[] = {
 	{"pcr-list", 1, 0, 'p'},
 	{"pcr-algo", 1, 0, 'P'},
 	{"save-attest-data", 1, 0, 'r'},
+	{"attest-data-url", 1, 0, 'U'},
 	{"send-unsigned-files", 0, 0, 'u'},
 	{"help", 0, 0, 'h'},
 	{"version", 0, 0, 'v'},
@@ -144,6 +145,7 @@ static void usage(char *argv0)
 		"\t-p, --pcr-list                PCR list\n"
 		"\t-P, --pcr-algo                PCR bank algorithm\n"
 		"\t-r, --save-attest-data <file> save attest data\n"
+		"\t-U, --attest-data-url 	 attest data URL\n"
 		"\t-u, --send-unsigned-files     send unsigned files\n"
 		"\t-h, --help                    print this help message\n"
 		"\t-v, --version                 print package version\n"
@@ -162,7 +164,7 @@ int main(int argc, char **argv)
 	char *message_in = NULL, *message_out = NULL;
 	char *test_server_fqdn = SERVER_HOSTNAME, *pcr_list_str = NULL;
 	char **attest_data_ptr = NULL, *attest_data, *attest_data_path = NULL;
-	char *pcr_alg_name = "sha1";
+	char *pcr_alg_name = "sha1", *attest_data_url = NULL;
 	char hostname[128];
 	int skip_sig_ver = 0, send_unsigned_files = 0;
 	int rc = 0, option_index, c, kernel_bios_log = 0, kernel_ima_log = 0;
@@ -179,7 +181,7 @@ int main(int argc, char **argv)
 
 	while (1) {
 		option_index = 0;
-		c = getopt_long(argc, argv, "aAkyqSs:bip:P:r:uhv",
+		c = getopt_long(argc, argv, "aAkyqSs:bip:P:r:U:uhv",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -221,6 +223,9 @@ int main(int argc, char **argv)
 			case 'r':
 				attest_data_path = optarg;
 				attest_data_ptr = &attest_data;
+				break;
+			case 'U':
+				attest_data_url = optarg;
 				break;
 			case 'u':
 				send_unsigned_files = 1;
@@ -296,6 +301,7 @@ int main(int argc, char **argv)
 							pcr_list_str,
 							send_unsigned_files,
 							csr_subject_entries,
+							attest_data_url,
 							attest_data_ptr,
 							&message_in);
 		if (rc < 0)

@@ -563,26 +563,29 @@ static char *name_fields[] = {
  * @param[in] certify_info          Certify info
  * @param[in] signature_len         Signature length
  * @param[in] signature             Signature
+ * @param[in] url                   SKAE DATA URL
  *
  * @returns 0 on success, a negative value on error
  */
 int attest_enroll_add_csr(char *key_path, char *csr_subject_entries[],
 			  attest_ctx_data *d_ctx, UINT16 certify_info_len,
-			  BYTE *certify_info, UINT16 signature_len, BYTE *signature)
+			  BYTE *certify_info, UINT16 signature_len,
+			  BYTE *signature, char *url)
 {
-
 	X509_REQ *req = NULL;
 	EVP_PKEY *pk = NULL;
 	ENGINE *e = NULL;
 	STACK_OF(X509_EXTENSION) *exts;
 	const char *engine_id = "tpm2";
-	size_t skae_bin_len = 0;
-	BYTE *skae_bin = NULL;
+	size_t skae_bin_len = 0, skae_data_url_bin_len = 0;
+	BYTE *skae_bin = NULL, *skae_data_url_bin = NULL;
 	ASN1_OCTET_STRING *oct = NULL;
 	X509_EXTENSION *skae_ext = NULL;
+	X509_EXTENSION *skae_data_url_ext = NULL;
 	X509_NAME_ENTRY *nameEntry = NULL;
 	X509_NAME *x509Name = NULL;
 	SUBJECTKEYATTESTATIONEVIDENCE *skae = NULL;
+	SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL *skae_data_url = NULL;
 	BYTE *req_bin = NULL;
 	int req_bin_len;
 	int rc = 0, i;
@@ -656,9 +659,28 @@ int attest_enroll_add_csr(char *key_path, char *csr_subject_entries[],
 
 	skae_ext = X509_EXTENSION_create_by_OBJ(NULL, skae->type, 0, oct);
 	sk_X509_EXTENSION_push(exts, skae_ext);
+	ASN1_OCTET_STRING_free(oct);
+
+	if (url) {
+		rc = skae_data_url_create(url, &skae_data_url_bin_len,
+					  &skae_data_url_bin, &skae_data_url);
+		if (rc < 0)
+			goto out;
+
+		oct = ASN1_OCTET_STRING_new();
+		if (!oct)
+			goto out;
+
+		oct->length = skae_data_url_bin_len;
+		oct->data = skae_data_url_bin;
+		skae_data_url_ext = X509_EXTENSION_create_by_OBJ(NULL,
+						skae_data_url->type, 0, oct);
+		sk_X509_EXTENSION_push(exts, skae_data_url_ext);
+		ASN1_OCTET_STRING_free(oct);
+	}
+
 	X509_REQ_add_extensions(req, exts);
 	sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
-	ASN1_OCTET_STRING_free(oct);
 
 	rc = X509_REQ_sign(req, pk, EVP_sha1());
 	if (!rc) {
@@ -678,6 +700,9 @@ int attest_enroll_add_csr(char *key_path, char *csr_subject_entries[],
 out:
 	if (skae)
 		SUBJECTKEYATTESTATIONEVIDENCE_free(skae);
+
+	if (skae_data_url)
+		SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL_free(skae_data_url);
 
 	if (req)
 		X509_REQ_free(req);
@@ -1085,15 +1110,16 @@ out:
  * @param[in] pcr_list_str          String of selected PCRs
  * @param[in] send_unsigned_files   Send unsigned files to verifier
  * @param[in] csr_subject_entries   Subject to add to csr
+ * @param[in] url		    SKAE DATA URL
  * @param[in,out] attest_data       Data necessary for key verification
  * @param[in,out] message_out       Message with certificate request
  *
  * @returns 0 on success, a negative value on error
  */
 int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
-				       char *pcr_alg_name, char *pcr_list_str,
-				       int send_unsigned_files, char *csr_subject_entries[],
-				       char **attest_data, char **message_out)
+			char *pcr_alg_name, char *pcr_list_str,
+			int send_unsigned_files, char *csr_subject_entries[],
+			char *url, char **attest_data, char **message_out)
 {
 	attest_ctx_data *d_ctx = NULL;
 	attest_ctx_verifier *v_ctx = NULL;
@@ -1186,7 +1212,7 @@ int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 
 	rc = attest_enroll_add_csr(OPENSSL_TPM2_KEY_PATH, csr_subject_entries, d_ctx,
 				   certify_info_len, certify_info,
-				   signature_len, signature);
+				   signature_len, signature, url);
 	if (rc < 0)
 		goto out;
 

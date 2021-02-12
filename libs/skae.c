@@ -71,6 +71,44 @@ out:
 	return rc;
 }
 
+static int skae_download_data(attest_ctx_data *d_ctx,
+			      attest_ctx_verifier *v_ctx,
+			      ASN1_OCTET_STRING *data)
+{
+	SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL *skae_data_url = NULL;
+	const unsigned char *data_ptr = data->data;
+	char data_path_template[MAX_PATH_LENGTH];
+	const char *url;
+	int rc, fd;
+
+	current_log(v_ctx);
+
+	skae_data_url = d2i_SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL(NULL,
+						&data_ptr, data->length);
+	check_goto(!skae_data_url, -EINVAL, out, v_ctx,
+		   "SKAE DATA URL der -> internal conversion failed");
+
+	url = (const char *)ASN1_STRING_get0_data(skae_data_url->url);
+	snprintf(data_path_template, sizeof(data_path_template),
+		 "%s/skae-temp-file-XXXXXX", d_ctx->data_dir);
+
+	fd = mkstemp(data_path_template);
+	check_goto(fd < 0, -EACCES, out, v_ctx,
+		   "mkstemp() error: %s", strerror(errno));
+
+	rc = attest_util_download_data(url, fd);
+	close(fd);
+
+	check_goto(rc, -ENOENT, out, v_ctx, "%s download error", url);
+
+	rc = attest_ctx_data_add_json_file(d_ctx, data_path_template);
+	unlink(data_path_template);
+
+	check_goto(rc, rc, out, v_ctx, "invalid JSON data");
+out:
+	return rc;
+}
+
 static X509_EXTENSION *skae_get_ext(X509 *cert, X509_REQ *req,
 				    const char *ext_name)
 {
@@ -119,13 +157,11 @@ static int skae_verify_common(attest_ctx_data *d_ctx,
 			      attest_ctx_verifier *v_ctx, X509 *cert,
 			      X509_REQ *req)
 {
-	char data_path_template[MAX_PATH_LENGTH];
 	X509_EXTENSION *skae_ext = NULL, *skae_url_ext = NULL;
 	ASN1_OCTET_STRING *skae_data = NULL, *skae_url_data = NULL;
 	struct verification_log *log;
 	EVP_PKEY *pk = NULL;
-	const char *data;
-	int rc = 0, fd;
+	int rc = 0;
 
 	log = attest_ctx_verifier_add_log(v_ctx, "verify SKAE extension");
 
@@ -138,28 +174,14 @@ static int skae_verify_common(attest_ctx_data *d_ctx,
 	skae_ext = skae_get_ext(cert, req, OID_SKAE);
 	check_goto(!skae_ext, -ENOENT, err, v_ctx, "SKAE extension not found");
 
-	skae_url_ext = skae_get_ext(cert, req, OID_SKAE_DATA_URL);
+	if (!req)
+		skae_url_ext = skae_get_ext(cert, req, OID_SKAE_DATA_URL);
+
 	if (skae_url_ext) {
 		skae_url_data = X509_EXTENSION_get_data(skae_url_ext);
-		data = (const char *)skae_url_data->data + 2;
-
-		snprintf(data_path_template, sizeof(data_path_template),
-			 "%s/skae-temp-file-XXXXXX", d_ctx->data_dir);
-
-		fd = mkstemp(data_path_template);
-		check_goto(fd < 0, -EACCES, err, v_ctx,
-			   "mkstemp() error: %s", strerror(errno));
-
-		rc = attest_util_download_data(data, fd);
-		close(fd);
-
-		check_goto(rc, -ENOENT, out, v_ctx, "%s download error", data);
-
-		rc = attest_ctx_data_add_json_file(d_ctx, data_path_template);
-		unlink(data_path_template);
-
-		if (rc)
-			goto out;
+		rc = skae_download_data(d_ctx, v_ctx, skae_url_data);
+		if (rc < 0)
+			goto err;
 	}
 
 	if (cert)
@@ -237,7 +259,7 @@ int skae_callback(int preverify, X509_STORE_CTX* x509_ctx)
 
 /**
  * Create SKAE extension
- * @param[in] version	T	CG version
+ * @param[in] version		TCG version
  * @param[in] tpms_attest_len	length of marshalled TPMS_ATTEST
  * @param[in] tpms_attest	marshalled TPMS_ATTEST
  * @param[in] sig_len		length of marshalled TPMT_SIGNATURE
@@ -309,6 +331,55 @@ out_skae:
 		SUBJECTKEYATTESTATIONEVIDENCE_free(skae);
 	else
 		*skae_obj = skae;
+out:
+	return rc > 0 ? 0 : -EINVAL;
+}
+
+/**
+ * Create SKAE DATA URL extension
+ * @param[in] url			URL
+ * @param[in,out] skae_data_url_bin_len	length of marshalled SKAE DATA URL
+ * @param[in,out] skae_data_url_bin	marshalled SKAE DATA URL
+ * @param[in,out] skae_data_url_obj	SKAE DATA URL object
+ *
+ * @returns 0 on success, a negative value on error
+ */
+int skae_data_url_create(char *url, size_t *skae_data_url_bin_len,
+		unsigned char **skae_data_url_bin,
+		SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL **skae_data_url_obj)
+{
+	SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL *skae_data_url;
+	int rc = -ENOMEM;
+
+	skae_data_url = SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL_new();
+	if (!skae_data_url) {
+		fprintf(stderr, "Cannot create SKAE DATA URL\n");
+		goto out;
+	}
+
+	skae_data_url->type = OBJ_txt2obj(OID_SKAE_DATA_URL, 1);
+	if (!skae_data_url->type) {
+		fprintf(stderr, "Cannot create SKAE DATA URL\n");
+		goto out_skae;
+	}
+
+	skae_data_url->url = ASN1_UTF8STRING_new();
+	if (!skae_data_url->url) {
+		fprintf(stderr, "Cannot create SKAE DATA URL\n");
+		goto out_skae;
+	}
+
+	ASN1_STRING_set(skae_data_url->url, url, strlen(url) + 1);
+
+	rc = i2d_SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL(skae_data_url,
+							skae_data_url_bin);
+	if (rc > 0)
+		*skae_data_url_bin_len = rc;
+out_skae:
+	if (!skae_data_url_obj)
+		SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL_free(skae_data_url);
+	else
+		*skae_data_url_obj = skae_data_url;
 out:
 	return rc > 0 ? 0 : -EINVAL;
 }

@@ -39,4 +39,8 @@ int skae_create(enum skae_versions version,
 		size_t *skae_bin_len, unsigned char **skae_bin,
 		SUBJECTKEYATTESTATIONEVIDENCE **skae_obj);
 
+int skae_data_url_create(char *url, size_t *skae_data_url_bin_len,
+		unsigned char **skae_data_url_bin,
+		SUBJECTKEYATTESTATIONEVIDENCE_DATA_URL **skae_data_url_obj);
+
 #endif /*_SKAE_H*/
