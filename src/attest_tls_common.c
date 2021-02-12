@@ -65,72 +65,79 @@ int configure_context(SSL_CTX *ctx, int engine, int verify_skae, char *key_path,
 	X509 *cert = NULL, *ca_cert = NULL;
 	int rc = -EINVAL;
 
-	if (engine) {
-		ENGINE_load_builtin_engines();
+	if (key_path) {
+		if (engine) {
+			ENGINE_load_builtin_engines();
 
-		if ((e = ENGINE_by_id(engine_id)) == NULL) {
-			ERR_print_errors_fp(stderr);
-			goto out;
-		}
+			if ((e = ENGINE_by_id(engine_id)) == NULL) {
+				ERR_print_errors_fp(stderr);
+				goto out;
+			}
 
-		if (!ENGINE_init(e)) {
-			ERR_print_errors_fp(stderr);
-			goto out;
-		}
+			if (!ENGINE_init(e)) {
+				ERR_print_errors_fp(stderr);
+				goto out;
+			}
 
-		if (!ENGINE_set_default(e, ENGINE_METHOD_ALL)) {
-			ERR_print_errors_fp(stderr);
-			goto out;
-		}
+			if (!ENGINE_set_default(e, ENGINE_METHOD_ALL)) {
+				ERR_print_errors_fp(stderr);
+				goto out;
+			}
 
-		pk = ENGINE_load_private_key(e, key_path, NULL, NULL);
-		if (!pk) {
-			ERR_print_errors_fp(stderr);
-			goto out;
+			pk = ENGINE_load_private_key(e, key_path, NULL, NULL);
+			if (!pk) {
+				ERR_print_errors_fp(stderr);
+				goto out;
+			}
+		} else {
+			fp = fopen(key_path, "r");
+			if (!fp)
+				goto out;
+
+			pk = PEM_read_PrivateKey(fp, &pk, NULL, NULL);
+			fclose(fp);
+
+			if (!pk)
+				goto out;
 		}
-	} else {
-		fp = fopen(key_path, "r");
+	}
+
+	if (cert_path) {
+		fp = fopen(cert_path, "r");
 		if (!fp)
 			goto out;
 
-		pk = PEM_read_PrivateKey(fp, &pk, NULL, NULL);
+		cert = PEM_read_X509(fp, &cert, NULL, NULL);
 		fclose(fp);
 
-		if (!pk)
+		if (!cert)
 			goto out;
 	}
 
-	fp = fopen(cert_path, "r");
-	if (!fp)
-		goto out;
-
-	cert = PEM_read_X509(fp, &cert, NULL, NULL);
-	fclose(fp);
-
-	if (!cert)
-		goto out;
-
-	if (ca_path) {
-		fp = fopen(ca_path, "r");
-		if (!fp)
-			goto out;
-
-		ca_cert = PEM_read_X509(fp, &ca_cert, NULL, NULL);
-		fclose(fp);
-
-		if (!ca_cert)
-			goto out;
-
-		sk_X509_push(chain, ca_cert);
-
+	if (ca_path)
 		SSL_CTX_load_verify_locations(ctx, ca_path, NULL);
-	}
 
 	SSL_CTX_set_ecdh_auto(ctx, 1);
 
-	if (SSL_CTX_use_cert_and_key(ctx, cert, pk, chain, 0) <= 0) {
-		ERR_print_errors_fp(stderr);
-		goto out;
+	if (cert && pk) {
+		if (ca_path) {
+			fp = fopen(ca_path, "r");
+			if (!fp)
+				goto out;
+
+			ca_cert = PEM_read_X509(fp, &ca_cert, NULL, NULL);
+			fclose(fp);
+
+			if (!ca_cert)
+				goto out;
+
+			sk_X509_push(chain, ca_cert);
+		}
+
+		if (SSL_CTX_use_cert_and_key(ctx, cert, pk, chain, 0) <= 0) {
+			ERR_print_errors_fp(stderr);
+			goto out;
+		}
 	}
 
 	if (verify_skae)

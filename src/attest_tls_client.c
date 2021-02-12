@@ -171,11 +171,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!key_path || !cert_path) {
-		printf("Missing key or certificate\n");
-		return -EINVAL;
-	}
-
 	if (!server_fqdn) {
 		printf("Missing TLS server\n");
 		return -EINVAL;
