@@ -203,6 +203,8 @@ int configure_attest(int fd, size_t recv_data_size,
 
 	attest_ctx_verifier_req_add_json_file(attest_ctx_verifier_get_global(),
 					      req_path);
+	if (!recv_data_size)
+		return 0;
 
 	return attest_ctx_data_add_json_data(attest_ctx_data_get_global(),
 					     (char *)recv_attest_data,

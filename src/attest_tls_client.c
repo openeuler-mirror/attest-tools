@@ -64,6 +64,64 @@ static int create_socket(char *server_fqdn)
 	return fd;
 }
 
+static int send_receive_attest_data(int server, char *attest_data_path,
+				    size_t *server_attest_data_size,
+				    unsigned char **server_attest_data)
+{
+	unsigned char *client_attest_data = NULL;
+	size_t file_size = 0, data_size = 0;
+	int rc;
+
+	if (attest_data_path) {
+		rc = attest_util_read_file(attest_data_path, &file_size,
+					   &client_attest_data);
+		if (!rc)
+			data_size = file_size;
+	}
+
+	data_size = htonl(data_size);
+	rc = attest_util_write_buf(server, (unsigned char *)&data_size,
+				   sizeof(data_size));
+	if (rc < 0)
+		goto error;
+
+	if (file_size) {
+		rc = attest_util_write_buf(server, client_attest_data,
+					   file_size);
+		if (rc < 0)
+			goto error;
+	}
+
+	rc = attest_util_read_buf(server, (unsigned char *)&data_size,
+				  sizeof(data_size));
+	if (rc < 0)
+		goto error;
+
+	data_size = ntohl(data_size);
+	if (data_size) {
+		*server_attest_data = malloc(data_size);
+		if (!*server_attest_data) {
+			rc = -ENOMEM;
+			goto error;
+		}
+
+		rc = attest_util_read_buf(server, *server_attest_data,
+					  data_size);
+		if (rc < 0) {
+			free(*server_attest_data);
+			goto error;
+		}
+
+		*server_attest_data_size = data_size;
+
+	}
+error:
+	if (client_attest_data)
+		munmap(client_attest_data, file_size);
+
+	return rc;
+}
+
 static struct option long_options[] = {
 	{"key", 1, 0, 'k'},
 	{"cert", 1, 0, 'c'},
@@ -74,6 +132,7 @@ static struct option long_options[] = {
 	{"pcr-list", 0, 0, 'p'},
 	{"requirements", 1, 0, 'r'},
 	{"verify-skae", 0, 0, 'S'},
+	{"disable-custom-protocol", 0, 0, 'D'},
 	{"verbose", 0, 0, 'V'},
 	{"help", 0, 0, 'h'},
 	{"version", 0, 0, 'v'},
@@ -93,6 +152,7 @@ static void usage(char *argv0)
 		"\t-p, --pcr-list                PCR list\n"
 		"\t-r, --requirements            verifier requirements\n"
 		"\t-S, --verify-skae             verify peer's SKAE\n"
+		"\t-D, --disable-custom-protocol disable custom protocol\n"
 		"\t-V, --verbose                 verbose mode\n"
 		"\t-h, --help                    print this help message\n"
 		"\t-v, --version                 print package version\n"
@@ -106,19 +166,20 @@ int main(int argc, char **argv)
 {
 	SSL_CTX *ctx;
 	SSL *ssl;
-	char reply[10], *key_path = NULL, *cert_path = NULL, *ca_path = NULL;
+	char request[256], reply[10];
+	char *key_path = NULL, *cert_path = NULL, *ca_path = NULL;
 	char *attest_data_path = NULL, *req_path = NULL;
 	char *server_fqdn = NULL, *pcr_list_str = NULL, *logs;
-	unsigned char *client_attest_data = NULL, *server_attest_data = NULL;
-	size_t file_size = 0, data_size = 0;
-	int server, option_index, c;
+	unsigned char *server_attest_data = NULL;
+	size_t server_attest_data_size = 0, nbytes, total = 0;
+	int server, option_index, c, custom_protocol = 1;
 	int rc = -EINVAL, engine = 0, verify_skae = 0, verbose = 0;
 
 	setvbuf(stdout, NULL, _IONBF, 1);
 
 	while (1) {
 		option_index = 0;
-		c = getopt_long(argc, argv, "k:c:d:s:a:ep:r:SVhv", long_options,
+		c = getopt_long(argc, argv, "k:c:d:s:a:ep:r:SDVhv", long_options,
 				&option_index);
 		if (c == -1)
 			break;
@@ -153,6 +214,9 @@ int main(int argc, char **argv)
 				break;
 			case 'V':
 				verbose = 1;
+				break;
+			case 'D':
+				custom_protocol = 0;
 				break;
 			case 'h':
 				usage(argv[0]);
@@ -201,51 +265,20 @@ int main(int argc, char **argv)
 	attest_ctx_data_init(NULL);
 	attest_ctx_verifier_init(NULL);
 
-	if (attest_data_path) {
-		rc = attest_util_read_file(attest_data_path, &file_size,
-					   &client_attest_data);
-		if (!rc)
-			data_size = file_size;
-	}
-
-	data_size = htonl(data_size);
-	rc = attest_util_write_buf(server, (unsigned char *)&data_size,
-				   sizeof(data_size));
-	if (rc < 0)
-		goto error;
-
-	if (file_size) {
-		rc = attest_util_write_buf(server, client_attest_data,
-					   file_size);
+	if (custom_protocol) {
+		rc = send_receive_attest_data(server, attest_data_path,
+					      &server_attest_data_size,
+					      &server_attest_data);
 		if (rc < 0)
 			goto error;
 	}
 
-	rc = attest_util_read_buf(server, (unsigned char *)&data_size,
-				  sizeof(data_size));
-	if (rc < 0)
-		goto error;
-
-	data_size = ntohl(data_size);
-	if (data_size) {
-		server_attest_data = malloc(data_size);
-		if (!server_attest_data) {
-			rc = -ENOMEM;
-			goto error;
-		}
-
-		rc = attest_util_read_buf(server, server_attest_data,
-					  data_size);
+	if (verify_skae) {
+		rc = configure_attest(server, server_attest_data_size,
+				      server_attest_data, pcr_list_str,
+				      req_path);
 		if (rc < 0)
 			goto error;
-
-		if (verify_skae) {
-			rc = configure_attest(server, data_size,
-					      server_attest_data, pcr_list_str,
-					      req_path);
-			if (rc < 0)
-				goto error;
-		}
 	}
 
 	ssl = SSL_new(ctx);
@@ -267,12 +300,28 @@ int main(int argc, char **argv)
 		goto error_ssl;
 	}
 
-	if (SSL_get_verify_result(ssl) == X509_V_OK) {
-		printf("good server cert\n");
-		SSL_read(ssl, reply, sizeof(reply) - 1);
-	} else {
+	if (!SSL_get_verify_result(ssl) == X509_V_OK) {
 		ERR_print_errors_fp(stderr);
 		printf("bad server cert\n");
+		goto error_ssl;
+	}
+
+	printf("good server cert\n");
+	if (custom_protocol) {
+		SSL_read(ssl, reply, sizeof(reply) - 1);
+	} else {
+		snprintf(request, sizeof(request),
+			 "GET / HTTP/1.1\r\n"
+			 "Host: %s\r\n"
+			 "Connection: close\r\n\r\n\n", server_fqdn);
+		SSL_write(ssl, request, strlen(request));
+		while (SSL_read_ex(ssl, reply, sizeof(reply) - 1, &nbytes) > 0) {
+			total += nbytes;
+			reply[nbytes] = '\0';
+			printf("%s", reply);
+		}
+
+		printf("Server returned %ld bytes\n", total);
 	}
 error_ssl:
 	SSL_shutdown(ssl);
@@ -284,10 +333,6 @@ free:
 cleanup:
 	cleanup_openssl();
 	free(server_attest_data);
-
-	if (client_attest_data)
-		munmap(client_attest_data, file_size);
-
 	attest_ctx_data_cleanup(NULL);
 	attest_ctx_verifier_cleanup(NULL);
 	return rc;
