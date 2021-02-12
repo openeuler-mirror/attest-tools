@@ -29,7 +29,7 @@
 
 #define SERVER_PORT "4433"
 
-static int create_socket(char *server_fqdn)
+static int create_socket(char *server_fqdn, char *server_port)
 {
 	struct addrinfo hints, *result = NULL, *rp;
 	int rc, fd = -1;
@@ -40,7 +40,7 @@ static int create_socket(char *server_fqdn)
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;
 
-	rc = getaddrinfo(server_fqdn, SERVER_PORT, &hints, &result);
+	rc = getaddrinfo(server_fqdn, server_port, &hints, &result);
 	if (rc)
 		return -1;
 
@@ -127,6 +127,7 @@ static struct option long_options[] = {
 	{"cert", 1, 0, 'c'},
 	{"ca-certs", 1, 0, 'd'},
 	{"server", 1, 0, 's'},
+	{"port", 1, 0, 'P'},
 	{"attest-data", 1, 0, 'a'},
 	{"engine", 0, 0, 'e'},
 	{"pcr-list", 0, 0, 'p'},
@@ -147,6 +148,7 @@ static void usage(char *argv0)
 		"\t-c, --cert                    client certificate\n"
 		"\t-d, --ca-certs                CA certificates\n"
 		"\t-s, --server                  server FQDN\n"
+		"\t-P, --port                    server port\n"
 		"\t-a, --attest-data             attestation data\n"
 		"\t-e, --engine                  use tpm2 engine\n"
 		"\t-p, --pcr-list                PCR list\n"
@@ -169,7 +171,8 @@ int main(int argc, char **argv)
 	char request[256], reply[10];
 	char *key_path = NULL, *cert_path = NULL, *ca_path = NULL;
 	char *attest_data_path = NULL, *req_path = NULL;
-	char *server_fqdn = NULL, *pcr_list_str = NULL, *logs;
+	char *server_fqdn = NULL, *server_port = SERVER_PORT;
+	char *pcr_list_str = NULL, *logs;
 	unsigned char *server_attest_data = NULL;
 	size_t server_attest_data_size = 0, nbytes, total = 0;
 	int server, option_index, c, custom_protocol = 1;
@@ -179,7 +182,7 @@ int main(int argc, char **argv)
 
 	while (1) {
 		option_index = 0;
-		c = getopt_long(argc, argv, "k:c:d:s:a:ep:r:SDVhv", long_options,
+		c = getopt_long(argc, argv, "k:c:d:s:P:a:ep:r:SDVhv", long_options,
 				&option_index);
 		if (c == -1)
 			break;
@@ -196,6 +199,9 @@ int main(int argc, char **argv)
 				break;
 			case 's':
 				server_fqdn = optarg;
+				break;
+			case 'P':
+				server_port = optarg;
 				break;
 			case 'a':
 				attest_data_path = optarg;
@@ -256,7 +262,7 @@ int main(int argc, char **argv)
 	if (rc < 0)
 		goto cleanup;
 
-	server = create_socket(server_fqdn);
+	server = create_socket(server_fqdn, server_port);
 	if (server < 0) {
 		perror("Unable to connect");
 		goto free;
