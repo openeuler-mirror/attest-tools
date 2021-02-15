@@ -1081,7 +1081,7 @@ int attest_enroll_msg_ak_cert_response(char *message_in)
 	printf("<- %s\n", message_in_stripped);
 	free(message_in_stripped);
 #endif
-	item = attest_ctx_data_get(d_ctx, CTX_AIK_CERT);
+	item = attest_ctx_data_get(d_ctx, CTX_AK_CERT);
 	if (item) {
 		rc = attest_util_write_file(AK_CERT_PATH,
 					    item->len, item->data, 0);
@@ -1185,7 +1185,7 @@ int attest_enroll_msg_key_cert_request(int kernel_bios_log, int kernel_ima_log,
 	if (rc < 0)
 		goto out;
 
-	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, AK_CERT_PATH, NULL);
+	rc = attest_ctx_data_add_file(d_ctx, CTX_AK_CERT, AK_CERT_PATH, NULL);
 	if (rc < 0)
 		goto out;
 
@@ -1304,7 +1304,7 @@ int attest_enroll_msg_quote_nonce_request(char **message_out)
 	attest_ctx_data_init(&d_ctx);
 	attest_ctx_verifier_init(&v_ctx);
 
-	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, AK_CERT_PATH, NULL);
+	rc = attest_ctx_data_add_file(d_ctx, CTX_AK_CERT, AK_CERT_PATH, NULL);
 	if (rc < 0)
 		goto out;
 
@@ -1379,7 +1379,7 @@ int attest_enroll_msg_quote_request(char *privacy_ca_dir, int kernel_bios_log,
 	if (rc < 0)
 		goto out;
 
-	rc = attest_ctx_data_add_file(d_ctx, CTX_AIK_CERT, AK_CERT_PATH, NULL);
+	rc = attest_ctx_data_add_file(d_ctx, CTX_AK_CERT, AK_CERT_PATH, NULL);
 	if (rc < 0)
 		goto out;
 

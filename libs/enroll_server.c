@@ -242,7 +242,7 @@ int attest_enroll_make_cert(attest_ctx_data *d_ctx_in, attest_ctx_data *d_ctx_ou
 
 	check_goto(rc, -EINVAL, out, v_ctx, "createCertificate() error");
 
-	rc = attest_ctx_data_add(d_ctx_out, CTX_AIK_CERT,
+	rc = attest_ctx_data_add(d_ctx_out, CTX_AK_CERT,
 				 strlen(akCertPemString),
 				 (BYTE *)akCertPemString, NULL);
 	if (rc) {
@@ -870,7 +870,7 @@ int attest_enroll_msg_gen_quote_nonce(int hmac_key_len, uint8_t *hmac_key,
 	printf("<- %s\n", message_in_stripped);
 	free(message_in_stripped);
 #endif
-	ak_cert = attest_ctx_data_get(d_ctx_in, CTX_AIK_CERT);
+	ak_cert = attest_ctx_data_get(d_ctx_in, CTX_AK_CERT);
 	check_goto(!ak_cert, -ENOENT, out, v_ctx,
 		   "AK certificate not provided");
 
@@ -954,7 +954,7 @@ int attest_enroll_msg_process_quote(int hmac_key_len, uint8_t *hmac_key,
 	printf("<- %s\n", message_in_stripped);
 	free(message_in_stripped);
 #endif
-	ak_cert = attest_ctx_data_get(d_ctx, CTX_AIK_CERT);
+	ak_cert = attest_ctx_data_get(d_ctx, CTX_AK_CERT);
 	check_goto(!ak_cert, -ENOENT, out, v_ctx,
 		   "AK certificate not provided");
 

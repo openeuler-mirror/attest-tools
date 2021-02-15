@@ -68,7 +68,7 @@ struct verification_log unknown_log = {{&unknown_log.list, &unknown_log.list},
 
 static const char *ctx_fields_str[CTX__LAST] = {
 	[CTX_PRIVACY_CA_CERT] = "privacy_ca_cert",
-	[CTX_AIK_CERT] = "aik_cert",
+	[CTX_AK_CERT] = "ak_cert",
 	[CTX_TPM_AK_KEY] = "tpm_ak",
 	[CTX_TPM_KEY_TEMPLATE] = "tpm_key",
 	[CTX_TPM_KEY_POLICY] = "policy",

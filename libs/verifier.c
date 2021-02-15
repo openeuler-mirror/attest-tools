@@ -70,7 +70,7 @@ static int attest_verifier_check_signature(attest_ctx_data *d_ctx,
 	check_goto(rc, -EINVAL, out, v_ctx,
 		   "TSS_Hash_Generate() error: %d", rc);
 
-	rc = attest_crypto_verify_cert(d_ctx, v_ctx, CTX_AIK_CERT,
+	rc = attest_crypto_verify_cert(d_ctx, v_ctx, CTX_AK_CERT,
 				       CTX_PRIVACY_CA_CERT, &x509);
 	if (rc)
 		goto out;

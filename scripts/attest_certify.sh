@@ -15,14 +15,14 @@
 #! /bin/bash
 
 function usage() {
-    echo "Usage: $0 -i <AIK priv> -u <AIK pub> -j <AIK parent handle>\
+    echo "Usage: $0 -i <AK priv> -u <AK pub> -j <AK parent handle>\
 -k <key priv> -l <key pub> -m <key parent handle>\
 -a <tpms_attest> -s <signature>"
     echo "Options:"
     echo -e "\t-h: help"
-    echo -e "\t-i <AIK priv>: AIK private portion"
-    echo -e "\t-u <AIK pub>: AIK public portion"
-    echo -e "\t-j <AIK parent handle>: AIK parent handle"
+    echo -e "\t-i <AK priv>: AK private portion"
+    echo -e "\t-u <AK pub>: AK public portion"
+    echo -e "\t-j <AK parent handle>: AK parent handle"
     echo -e "\t-k <key priv>: key private portion"
     echo -e "\t-l <key pub>: key public portion"
     echo -e "\t-m <key parent handle>: key parent handle"
@@ -31,9 +31,9 @@ function usage() {
     echo -e "\t-o <skae>: SKAE extension in DER format"
 }
 
-aik_priv=""
-aik_pub=""
-aik_parent="81000001"
+ak_priv=""
+ak_pub=""
+ak_parent="81000001"
 key_priv=""
 key_pub=""
 key_parent="81000001"
@@ -47,11 +47,11 @@ while getopts "hi:u:j:k:l:m:a:s:o:" opt; do
         usage
         exit 0
         ;;
-    i)  aik_priv=$OPTARG
+    i)  ak_priv=$OPTARG
         ;;
-    u)  aik_pub=$OPTARG
+    u)  ak_pub=$OPTARG
         ;;
-    j)  aik_parent=$OPTARG
+    j)  ak_parent=$OPTARG
         ;;
     k)  key_priv=$OPTARG
         ;;
@@ -68,16 +68,16 @@ while getopts "hi:u:j:k:l:m:a:s:o:" opt; do
     esac
 done
 
-if [ -z "$aik_priv" ] || [ -z "$aik_pub" ] || [ -z "$key_pub" ] || \
+if [ -z "$ak_priv" ] || [ -z "$ak_pub" ] || [ -z "$key_pub" ] || \
    [ -z "$tpms_attest" ] || [ -z "$signature" ]; then
     echo "Missing parameter"
     usage
     exit 1
 fi
 
-aik_handle=$(tssload -hp $aik_parent -ipr $aik_priv -ipu $aik_pub)
+ak_handle=$(tssload -hp $ak_parent -ipr $ak_priv -ipu $ak_pub)
 if [ $? -eq 0 ]; then
-    aik_handle=${aik_handle:(-8)}
+    ak_handle=${ak_handle:(-8)}
 fi
 
 key_handle=$(tssload -hp $key_parent -ipr $key_priv -ipu $key_pub)
@@ -85,11 +85,11 @@ if [ $? -eq 0 ]; then
     key_handle=${key_handle:(-8)}
 fi
 
-tsscertify -ho $key_handle -hk $aik_handle -oa $tpms_attest -os $signature
+tsscertify -ho $key_handle -hk $ak_handle -oa $tpms_attest -os $signature
 
-tssflushcontext -ha $aik_handle
+tssflushcontext -ha $ak_handle
 tssflushcontext -ha $key_handle
 
 if [ -n "$skae" ]; then
-    ../src/attest_create_skae -a $tpms_attest -s $signature -e 2.0 $skae
+    attest_create_skae -a $tpms_attest -s $signature -e 2.0 $skae
 fi

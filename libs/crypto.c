@@ -185,7 +185,7 @@ int attest_crypto_verify_cert(attest_ctx_data *d_ctx,
 			      X509 **x509)
 {
 	struct data_item *cert_item, *ca_cert_item;
-	X509 *aik_cert = NULL, *ca_cert;
+	X509 *ak_cert = NULL, *ca_cert;
 	X509_STORE *ca_store = NULL;
 	X509_STORE_CTX *verifyCtx = NULL;
 	struct list_head *head;
@@ -196,15 +196,15 @@ int attest_crypto_verify_cert(attest_ctx_data *d_ctx,
 
 	cert_item = attest_ctx_data_get(d_ctx, cert);
 	check_goto(!cert_item, -ENOENT, out, v_ctx,
-		   "AIK certificate not provided");
+		   "AK certificate not provided");
 
 	bio = BIO_new_mem_buf((void*)cert_item->data, cert_item->len);
 	check_goto(!bio, -ENOMEM, out, v_ctx, "BIO_new_mem_buf() error");
-	aik_cert = PEM_read_bio_X509(bio, NULL, 0, NULL);
+	ak_cert = PEM_read_bio_X509(bio, NULL, 0, NULL);
 	BIO_free(bio);
 
-	check_goto(!aik_cert, -EINVAL, out, v_ctx,
-		   "PEM_read_bio_X509() error: invalid AIK");
+	check_goto(!ak_cert, -EINVAL, out, v_ctx,
+		   "PEM_read_bio_X509() error: invalid AK");
 
 	ca_store  = X509_STORE_new();
 	check_goto(!ca_store, -ENOMEM, out, v_ctx, "X509_STORE_new() error");
@@ -230,7 +230,7 @@ int attest_crypto_verify_cert(attest_ctx_data *d_ctx,
 	check_goto(!verifyCtx, -ENOMEM, out, v_ctx,
 		   "X509_STORE_CTX_new() error");
 
-	rc = X509_STORE_CTX_init(verifyCtx, ca_store, aik_cert, NULL);
+	rc = X509_STORE_CTX_init(verifyCtx, ca_store, ak_cert, NULL);
 	check_goto(rc != 1, -EINVAL, out, v_ctx, "X509_STORE_CTX_init() error");
 
 	rc = X509_verify_cert(verifyCtx);
@@ -241,7 +241,7 @@ int attest_crypto_verify_cert(attest_ctx_data *d_ctx,
 	check_goto(rc != 1, -EINVAL, out, v_ctx,
 		   X509_verify_cert_error_string(err));
 
-	*x509 = aik_cert;
+	*x509 = ak_cert;
 	rc = 0;
 out:
 	if (ca_store != NULL)
@@ -253,7 +253,7 @@ out:
 	}
 
 	if (rc)
-		X509_free(aik_cert);
+		X509_free(ak_cert);
 
 	return rc;
 }
