@@ -376,6 +376,7 @@ static int collect_data(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
 			int send_unsigned_files)
 {
 	unsigned char *data = NULL;
+	const char *verifier_str = "dummy|verify";
 	struct stat st;
 	size_t len;
 	int rc = 0;
@@ -418,11 +419,12 @@ static int collect_data(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx,
 	if (rc)
 		goto out;
 
-	if (send_unsigned_files) {
-		rc = attest_ctx_verifier_req_add(v_ctx, "ima_cp|verify", "");
-		if (rc)
-			goto out;
-	}
+	if (send_unsigned_files)
+		verifier_str = "ima_cp|verify";
+
+	rc = attest_ctx_verifier_req_add(v_ctx, verifier_str, "");
+	if (rc)
+		goto out;
 
 	rc = attest_event_log_parse_verify(d_ctx, v_ctx, 1);
 out:
