@@ -181,8 +181,8 @@ int main(int argc, char **argv)
 		return -EINVAL;
 	}
 
-	if (verify_skae && (!pcr_list_str || !req_path)) {
-		printf("Missing PCR mask or requirements\n");
+	if (verify_skae && !req_path) {
+		printf("Missing requirements\n");
 		return -EINVAL;
 	}
 
