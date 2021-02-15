@@ -401,9 +401,12 @@ int attest_util_parse_pcr_list(const char *pcr_list_str, int pcr_list_num,
 			goto out;
 		}
 
+		errno = 0;
+
 		pcr = strtol(pcr_str, NULL, 10);
-		if (pcr < 0) {
-			rc = pcr;
+		if ((errno == ERANGE && (pcr == LONG_MAX || pcr == LONG_MIN)) ||
+		    (errno != 0 && pcr == 0)) {
+			rc = -EINVAL;
 			goto out;
 		}
 
