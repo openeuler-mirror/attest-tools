@@ -21,6 +21,9 @@ libverifier_ima_sig_la_LIBADD=${DEPS_LIBS} -ldigestlist-base \
 				  $(top_srcdir)/libs/libattest.la
 libverifier_ima_sig_la_SOURCES=ima_sig.c
 libverifier_ima_sig_la_CFLAGS=${DEPS_CFLAGS} -g -Werror -I$(top_srcdir)/include
+if DIGESTLISTS_PGP
+libverifier_ima_sig_la_CFLAGS+="-DDIGESTLISTS_PGP"
+endif
 endif
 
 libverifier_ima_policy_la_LDFLAGS=-no-undefined -avoid-version

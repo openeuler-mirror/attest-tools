@@ -54,7 +54,9 @@ AC_CHECK_HEADER([tss2/tss.h],[AC_DEFINE(TSS_INCLUDE,tss2)],
 				AC_MSG_ERROR([No TSS2 include directory found]),
 				[# define TPM_POSIX]), [# define TPM_POSIX])
 AC_CHECK_LIB([digestlist-base], [new_key],[digestlists=true],[],[])
+AC_CHECK_LIB([digestlist-base], [new_key_pgp],[digestlists_pgp=true],[],[])
 AM_CONDITIONAL([DIGESTLISTS], [test x$digestlists = xtrue])
+AM_CONDITIONAL([DIGESTLISTS_PGP], [test x$digestlists_pgp = xtrue])
 
 CFLAGS="$CFLAGS -Wall -Werror -DTPM_POSIX"
 

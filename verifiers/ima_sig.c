@@ -50,7 +50,10 @@ static void free_reqs(struct list_head *head)
 
 int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 {
-	struct data_item *ima_cert_item, *item;
+	struct data_item *ima_cert_item;
+#ifdef DIGESTLISTS_PGP
+	struct data_item *item;
+#endif
 	struct event_log_entry *cur_log_entry, *key_entry = NULL;
 	struct ima_log_entry *ima_log_entry;
 	struct event_log *ima_log;
@@ -168,6 +171,7 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 		}
 	}
 
+#ifdef DIGESTLISTS_PGP
 	list_for_each_entry(item, &d_ctx->ctx_data[CTX_AUX_DATA], list) {
 		if (!item->mapped_file)
 			continue;
@@ -198,8 +202,9 @@ int verify(attest_ctx_data *d_ctx, attest_ctx_verifier *v_ctx)
 			free_key(&head, key);
 		}
 	}
+#endif
 
-        list_for_each_entry(cur_log_entry, &ima_log->logs, list) {
+	list_for_each_entry(cur_log_entry, &ima_log->logs, list) {
 		ima_log_entry = (struct ima_log_entry *)cur_log_entry->log;
 
 		rc = ima_template_get_digest(ima_log_entry, &algo_len,
