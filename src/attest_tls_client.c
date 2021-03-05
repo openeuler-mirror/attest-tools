@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 			printf("%s", reply);
 		}
 
-		printf("Server returned %ld bytes\n", total);
+		printf("Server returned %zu bytes\n", total);
 	}
 error_ssl:
 	SSL_shutdown(ssl);
