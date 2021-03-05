@@ -53,8 +53,8 @@ static int attest_event_log_parse_v2(attest_ctx_verifier *v_ctx,
 {
 	struct tcg_efi_specid_event_head *efispecid;
 	struct tcg_event_field *event_field;
-	void *marker;
-	void *marker_start;
+	u8 *marker;
+	u8 *marker_start;
 	struct tpm_digest_ptr *digest_array = NULL;
 	u32 halg_size;
 	size_t size;
@@ -63,7 +63,7 @@ static int attest_event_log_parse_v2(attest_ctx_verifier *v_ctx,
 	int j;
 	int rc = 0;
 
-	marker = event;
+	marker = (void *)event;
 	marker_start = marker;
 	marker = marker + sizeof(event->pcr_idx) + sizeof(event->event_type)
 		+ sizeof(event->count);
