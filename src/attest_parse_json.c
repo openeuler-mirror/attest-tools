@@ -56,6 +56,8 @@ static char *ask_question(int max_answer_len, char *answer,
 
 	va_start(list, question_fmt);
 	vprintf(question_fmt, list);
+	va_end(list);
+
 	if (!fgets(answer, max_answer_len, stdin))
 		return NULL;
 
