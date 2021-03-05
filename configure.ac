@@ -2,12 +2,12 @@
 # configure.in for the attest-tools project
 #
 
-AC_INIT(attest-tools, 0.2.0, <roberto.sassu@huawei.com>)
+AC_INIT(attest-tools, 0.2.92, <roberto.sassu@huawei.com>)
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 
 # Enable debug.
 AC_ARG_ENABLE([debug], [  --enable-debug    Turn on debugging],
-          [debug=${enableval}], [debug=no])
+	      [debug=${enableval}], [debug=no])
 
 if test -z "$CFLAGS"; then
   if test "$debug" == yes; then
@@ -31,40 +31,43 @@ AC_PROG_LIBTOOL
 
 # Debugging support
 AC_ARG_ENABLE(debug,
-        AC_HELP_STRING([--enable-debug],
-        [turn on all debugging flags [default is off]]),
-        [enable_debug="yes"
-         AC_MSG_RESULT([*** Enabling debugging at user request ***])],)
+		AC_HELP_STRING([--enable-debug],
+		[turn on all debugging flags [default is off]]),
+		[enable_debug="yes"
+		 AC_MSG_RESULT([*** Enabling debugging at user request ***])],)
 
 AC_SEARCH_LIBS([SHA256_Init], [crypto], [],
-           AC_MSG_ERROR([Unable to find the OpenSSL library]))
+	       AC_MSG_ERROR([Unable to find the OpenSSL library]))
 AC_SEARCH_LIBS([curl_easy_setopt], [curl], [],
-           AC_MSG_ERROR([Unable to find the curl library]))
+	       AC_MSG_ERROR([Unable to find the curl library]))
 AC_SEARCH_LIBS([json_object_new_object], [json-c], [],
-           AC_MSG_ERROR([Unable to find the json-c library]))
+	       AC_MSG_ERROR([Unable to find the json-c library]))
 AC_SEARCH_LIBS([TSS_Create], [ibmtss], [],
-           AC_MSG_ERROR([Unable to find the TSS2 utils library]))
+	       AC_MSG_ERROR([Unable to find the TSS2 utils library]))
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h unistd.h])
 AC_CHECK_HEADER([openssl/evp.h])
 AC_CHECK_HEADER([json-c/json.h])
 AC_CHECK_HEADER([tss2/tss.h],[AC_DEFINE(TSS_INCLUDE,tss2)],
-        AC_CHECK_HEADER([ibmtss/tss.h],[AC_DEFINE(TSS_INCLUDE,ibmtss)],
-                AC_MSG_ERROR([No TSS2 include directory found]),
-                [# define TPM_POSIX]), [# define TPM_POSIX])
+		AC_CHECK_HEADER([ibmtss/tss.h],[AC_DEFINE(TSS_INCLUDE,ibmtss)],
+				AC_MSG_ERROR([No TSS2 include directory found]),
+				[# define TPM_POSIX]), [# define TPM_POSIX])
 AC_CHECK_LIB([digestlist-base], [new_key],[digestlists=true],[],[])
+AC_CHECK_LIB([digestlist-base], [new_key_pgp],[digestlists_pgp=true],[],[])
 AM_CONDITIONAL([DIGESTLISTS], [test x$digestlists = xtrue])
+AM_CONDITIONAL([DIGESTLISTS_PGP], [test x$digestlists_pgp = xtrue])
 
 CFLAGS="$CFLAGS -Wall -Werror -DTPM_POSIX"
 
 AC_SUBST(CFLAGS)
 
 AC_SUBST(TSS_INCLUDE)
-AC_OUTPUT([Makefile libs/Makefile libs/event_log/Makefile
-       verifiers/Makefile src/Makefile scripts/Makefile])
+AC_OUTPUT([Makefile libs/Makefile include/Makefile libs/event_log/Makefile
+	   verifiers/Makefile src/Makefile scripts/Makefile
+	   req_examples/Makefile systemd/Makefile])
 
-       cat <<EOF
+	   cat <<EOF
 
 CFLAGS:				${CFLAGS}
 

@@ -1,0 +1,24 @@
+req-dummy.json: does not verify event logs; any measurement is valid
+
+	This set of requirements is helpful for an initial testing of
+	attest-tools. The RA Server will only verify that the TCG
+	attestation structures are valid.
+
+
+req-bios-ima.json: marks the BIOS event log as verified and checks IMA
+		   boot_aggregate
+
+	This set of requirements is helpful to test the IMA boot_aggregate
+	verifier. It assumes that the IMA measurement list contains only
+	the boot_aggregate entry (no policy is loaded).
+
+
+req-bios-ima-sig.json: marks the BIOS event log as verified, checks IMA
+                       boot_aggregate and verifies IMA signatures.
+
+	This set of requirements does a complete verification of the IMA
+	measurement list, assuming that only signed files are added to
+	the list. This requirement must be edited to set acceptable keys
+	for the ima_sig verifier. Requirements must be separated with
+	the comma, and each requirement should have a valid prefix
+	(e.g. 'subject:', 'subject-id:').

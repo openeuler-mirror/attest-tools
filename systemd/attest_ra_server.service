@@ -1,0 +1,16 @@
+[Unit]
+Description=RA Server
+After=network.target
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/sysconfig/attest_ra_server
+ExecStart=attest_ra_server -p $PCR_LIST -r $REQ_PATH
+StandardOutput=append:/var/log/attest_ra_server.log
+StandardError=inherit
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target

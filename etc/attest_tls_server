@@ -1,0 +1,14 @@
+# Server key
+KEY_PATH="/etc/attest-tools/tls_key.pem"
+
+# Server certificate
+CERT_PATH="/etc/attest-tools/tls_key_cert.pem"
+
+# Server certificate CA
+CA_CERT_PATH="/etc/attest-tools/tls_key_ca_cert.pem"
+
+# Verbose mode
+VERBOSE_OPT="-V"
+
+# Use tpm2 engine
+ENGINE_OPT="-e"

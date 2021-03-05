@@ -1,5 +1,17 @@
 #! /bin/bash
 
+# Copyright (C) 2019-2021 Huawei Technologies Duesseldorf GmbH
+#
+# Author: Roberto Sassu <roberto.sassu@huawei.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, version 2 of the
+# License.
+#
+# File: ekcert_read.sh
+#      Obtain EK certificate from TPM.
+
 function usage() {
     echo "Usage: $0 [ -a <EK algo> ] -o <EK cert>"
     echo "Options:"

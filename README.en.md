@@ -239,60 +239,37 @@ scenario.
 ### Create an AK and request a certificate:
 
 #### Preliminary Steps (on the server)
-1) use existing CA or generate a new custom CA (key: ca_key.pem,
-   key password: 1234, cert: ca_cert.pem)  
+1) use existing CA or generate a new custom CA by executing:
 ```
-$ openssl genrsa -des3 -out ca_key.pem 4096
-$ openssl req -x509 -new -nodes -key ca_key.pem -sha256 -days 1024 -out ca_cert.pem
-$ mkdir demoCA
-$ mkdir demoCA/newcerts
-$ echo 01 >demoCA/serial
-$ touch demoCA/index.txt
+$ generate_demoCA demoCA
 ```
 Update /etc/ssl/openssl.cnf, with:
 ```
 [ CA_default ]
+dir = <absolute path of demoCA>
 ...
 unique_subject = no
 ...
 copy_extensions = copy
 ...
+input_password = <password>
 ```
 2) configure a TPM (a software TPM is sufficient) 
 3) install openssl_tpm2_engine  
-4) create a key and certificate for the TLS server  
-```
-$ openssl genrsa -out key.pem
-$ openssl req -new -key key.pem -out cert.csr
-$ openssl x509 -req -in cert.csr -CA ca_cert.pem -CAkey ca_key.pem -CAcreateserial -out cert.pem
-```
-#### Preliminary Steps (on the client)
-1) obtain the EK credential from TPM NVRAM:
-Make sure ibmtss/utils/createekcert.c contains expected rootIssuerEntriesRsa[] values.
-Copy the same CA key and CA cert from server to client.
-```
-$ # software TPM case as an example
-$ tssstartup
-$ tsscreateekcert -cakey ca_key.pem -capwd 1234
-$ tsscreateprimary -hi o -st
-$ tssevictcontrol -hi o -ho 80000000 -hp 81000001
-$ tssflushcontext -ha 80000000
-$ ekcert_read.sh -a sha256 -o ek_cert.pem
-```
-2) manually retrieve CA certificates of EK credential and add their path to
-   the file 'list', one per line  
-```
-$ echo ca_cert.pem > list
 
+#### Preliminary Steps (on the client)
+The following steps assume that a software TPM is provisioned by libvirt
+for the VM.
+
+1) Copy swtpm certificates from /var/lib/swtpm-localca in the host to the VM:
 ```
+cp issuercert.pem swtpm-localca-rootca-cert.pem /etc/attest-tools/ek_ca_certs
+```
+
 #### Steps (on the server)
-1) generate verifier requirements:
+1) execute:
 ```
-$ attest_build_json -j reqs -k 'dummy|verify' -q '' req-dummy.json
-```
-2) execute:
-```
-$ attest_ra_server -r req-dummy.json
+$ attest_ra_server -r /etc/attest-tools/req_examples/req-dummy.json
 ```
 
 #### Steps (on the client)
@@ -314,15 +291,17 @@ $ attest_ra_client -k -s <attest_server FQDN> -r attest.txt
 #### Steps (on the server)
 1) execute:
 ```
-$ attest_tls_server -k key.pem -c cert.pem -d ca_cert.pem \
-  -r req-dummy.json -S -V
+$ attest_tls_server -e -k /etc/attest-tools/tls_key.pem \
+  -c /etc/attest-tools/tls_key_cert.pem \
+  -d /etc/attest-tools/tls_key_ca_cert.pem -a attest.txt
 ```
 
 #### Steps (on the client)
 1) execute:
 ```
-$ attest_tls_client -k tpm_key.pem -c key_cert.pem -d ca_cert.pem \
-  -s <attest_server FQDN> -e -a attest.txt
+$ attest_tls_client -S -V -s <attest_server FQDN> \
+  -d /etc/attest-tools/tls_key_ca_cert.pem \
+  -r /etc/attest-tools/req_examples/req-dummy.json
 ```
 
 ### Create a TPM key bound to PCRs 0-9,10 and request a certificate:
@@ -333,21 +312,12 @@ $ attest_tls_client -k tpm_key.pem -c key_cert.pem -d ca_cert.pem \
 2) ensure that the client has a IMA event log accessible from
    /sys/kernel/security/ima/binary_runtime_measurements and that no IMA
    policy is loaded  
-3) copy the name of the file containing the Privacy CA certificate to
-   a file named 'list_privacy_ca'  
-
 
 #### Steps (on the server)
-1) create verifier requirement:
+1) execute:
 ```
-$ attest_build_json -j reqs -k 'bios|verify' -q 'always-true' \
-  req-bios-ima.json
-$ attest_build_json -j reqs -k 'ima_boot_aggregate|verify' -q '' \
-  req-bios-ima.json
-```
-2) execute:
-```
-$ attest_ra_server -r req-bios-ima.json -p 0,1,2,3,4,5,6,7,8,9,10
+$ attest_ra_server -r /etc/attest-tools/req_examples/req-bios-ima.json \
+  -p 0,1,2,3,4,5,6,7,8,9,10
 ```
 
 #### Steps (on the client)
@@ -363,15 +333,18 @@ $ attest_ra_client -k -s <attest_server FQDN> -r attest.txt -b -i \
 1) execute:
 
 ```
-$ attest_tls_servers -k key.pem -c cert.pem -d ca_cert.pem \
-  -r req-bios-ima.json -S -V -p 0,1,2,3,4,5,6,7,8,9,10
+$ attest_tls_server -e -k /etc/attest-tools/tls_key.pem \
+  -c /etc/attest-tools/tls_key_cert.pem \
+  -d /etc/attest-tools/tls_key_ca_cert.pem -a attest.txt
 ```
 
 #### Steps (on the client)
 1) execute:
 ```
-$ attest_tls_client -k tpm_key.pem -c key_cert.pem -d ca_cert.pem \
-  -s <attest_server FQDN> -e -a attest.txt
+$ attest_tls_client -S -V -s <attest_server FQDN>
+  -d /etc/attest-tools/tls_key_ca_cert.pem \
+  -r /etc/attest-tools/req_examples/req-bios-ima.json \
+  -p 0,1,2,3,4,5,6,7,8,9,10
 ```
 
 ### Perform explicit RA:

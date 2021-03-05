@@ -1,0 +1,6 @@
+{
+  "reqs":{
+    "bios|verify":"always-true",
+    "ima_boot_aggregate|verify":""
+  }
+}

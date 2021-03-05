@@ -23,11 +23,11 @@
 #define TCG_EVENT_NAME_LEN_MAX	255
 
 #define check_set_ptr(cur_len, source_ptr, req_len, dest_ptr_type, dest_ptr) { \
-    if (cur_len < req_len) \
-        return -EINVAL; \
-    dest_ptr = (dest_ptr_type *)source_ptr; \
-    source_ptr += req_len; \
-    cur_len -= req_len; \
+	if (cur_len < req_len) \
+		return -EINVAL; \
+	dest_ptr = (dest_ptr_type *)source_ptr; \
+	source_ptr += req_len; \
+	cur_len -= req_len; \
 }
 
 /**
@@ -43,30 +43,30 @@
  * @returns 0 on success, a negative value on error
  */
 typedef int (*parse_log_func)(attest_ctx_verifier *v_ctx,
-                  uint32_t *remaining_len, unsigned char **data,
-                  void **parsed_log, void **first_parsed_log);
+			      uint32_t *remaining_len, unsigned char **data,
+			      void **parsed_log, void **first_parsed_log);
 
 struct event_log {
-    struct list_head list;
-    struct list_head logs;
-    const char *id;
+	struct list_head list;
+	struct list_head logs;
+	const char *id;
 };
 
 #define LOG_ENTRY_PROCESSED 0x0001
 struct event_log_entry {
-    struct list_head list;
-    uint16_t flags;
-    void *log;
+	struct list_head list;
+	uint16_t flags;
+	void *log;
 };
 
 struct event_log *attest_event_log_get(attest_ctx_verifier *v_ctx,
-                       const char *id);
+				       const char *id);
 int attest_event_log_verify_digest(attest_ctx_verifier *v_ctx,
-                   uint32_t digest_len, uint8_t *digest,
-                   uint32_t data_len, uint8_t *data,
-                   TPM_ALG_ID algID);
+				   uint32_t digest_len, uint8_t *digest,
+				   uint32_t data_len, uint8_t *data,
+				   TPM_ALG_ID algID);
 /// @private
 int attest_event_log_parse_verify(attest_ctx_data *d_ctx,
-                  attest_ctx_verifier *v_ctx, int verify);
+				  attest_ctx_verifier *v_ctx, int verify);
 
 #endif /*_EVENT_LOG_H*/

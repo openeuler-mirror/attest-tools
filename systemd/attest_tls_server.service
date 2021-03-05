@@ -1,0 +1,16 @@
+[Unit]
+Description=TLS Server
+After=network.target
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/sysconfig/attest_tls_server
+ExecStart=attest_tls_server -k $KEY_PATH -c $CERT_PATH -d $CA_CERT_PATH $VERBOSE_OPT $ENGINE_OPT
+StandardOutput=append:/var/log/attest_tls_server.log
+StandardError=inherit
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target
