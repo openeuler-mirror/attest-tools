@@ -1,14 +1,14 @@
 name:           attest-tools
 Version:        0.2.92
-Release:        1
+Release:        2
 Summary:        Attestation tools
 
 Source0:        https://gitee.com/openeuler/%{name}/repository/archive/v%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-License:        GPL-2.0
+License:        GPLv2
 Url:            https://gitee.com/openeuler/attest-tools
 BuildRequires:  autoconf automake libcurl-devel libtool openssl-devel
-BuildRequires:  digest-list-tools json-c-devel libcurl-devel tss2-devel
+BuildRequires:  digest-list-tools-devel json-c-devel libcurl-devel tss2-devel
 Requires:       json-c curl tss2
 
 %if 0%{?suse_version}
@@ -95,6 +95,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_prefix}/include/attest-tools
 
 %changelog
+* Tue Apr 6 2021 Zhang Tianxing <zhangtianxing3@huawei.com> - 0.2.92-2
+- Adjust build require to digest-list-tools-devel
+
 * Wed Feb 10 2021 Roberto Sassu <roberto.sassu@huawei.com> - 0.2.92-1
 - Remove dependency on openssl_tpm2_engine
 - Add support for PGP keys
